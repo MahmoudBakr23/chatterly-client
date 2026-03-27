@@ -1,19 +1,22 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-// ─── Edge Middleware — route protection ──────────────────────────────────────
-// Next.js middleware runs at the edge (CDN level) before any page renders.
-// Its role here mirrors Rails' before_action :authenticate_user! — it intercepts
-// every request and redirects unauthenticated users away from protected routes.
+// ─── Proxy (Next.js 16 Route Protection) ─────────────────────────────────────
+// Renamed from middleware.ts → proxy.ts as required by Next.js 16.
+// Previously called "Edge Middleware"; Next.js 16 consolidates this into the
+// "proxy" convention running at the Node.js layer (edge runtime no longer used).
 //
-// Why edge middleware instead of checking auth inside each page?
+// Its role mirrors Rails' before_action :authenticate_user! — intercepts every
+// request and redirects unauthenticated users away from protected routes.
+//
+// Why proxy instead of checking auth inside each page?
 //   1. It runs before the page component — no flash of unauthenticated content
 //   2. It's centralized — one place to update the auth routing logic
-//   3. It runs on the CDN edge in production — no round trip to the origin server
+//   3. It runs at the server layer in production — no round trip to the origin
 //
 // What it checks: the presence of the auth_token httpOnly cookie.
-// It does NOT validate the JWT signature here (that would require crypto at the edge).
-// Actual JWT validation happens server-side in the Route Handlers and inside the
-// Rails API on every authenticated request. Middleware is the "bouncer at the door";
+// It does NOT validate the JWT signature here (that would require crypto).
+// Actual JWT validation happens server-side in Route Handlers and inside the
+// Rails API on every authenticated request. Proxy is the "bouncer at the door";
 // the Rails API is the "ID check at the bar."
 
 // Routes accessible without authentication
@@ -22,7 +25,7 @@ const PUBLIC_ROUTES = ["/login", "/register"];
 // Routes that are always allowed through (Next.js internals, static files)
 const IGNORED_PREFIXES = ["/_next", "/api", "/favicon.ico"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Let Next.js internals and static assets pass through unchecked.
