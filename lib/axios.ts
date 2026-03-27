@@ -42,10 +42,10 @@ const api = axios.create({
 //
 // This is a deliberate security trade-off: httpOnly cookie protects against XSS
 // token theft; in-memory store is the bridge for client-side API calls.
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  // Lazy import avoids circular dependency (store imports api, api imports store).
+api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  // Dynamic import avoids circular dependency (store imports api, api imports store).
   // getState() is synchronous and safe to call outside React — Zustand supports this.
-  const { getAuthStore } = require("@/store/auth.store") as typeof import("@/store/auth.store");
+  const { getAuthStore } = await import("@/store/auth.store");
   const token = getAuthStore().token;
 
   if (token) {
@@ -68,9 +68,8 @@ api.interceptors.response.use(
   // Error path: inspect status and handle globally where possible
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Import dynamically to avoid circular deps (same pattern as above).
-      const { getAuthStore } =
-        require("@/store/auth.store") as typeof import("@/store/auth.store");
+      // Dynamic import avoids circular deps (same pattern as above).
+      const { getAuthStore } = await import("@/store/auth.store");
       getAuthStore().logout();
       // Redirect to login. We use window.location rather than Next.js router
       // because this interceptor runs outside the React component tree.
