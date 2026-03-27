@@ -1,15 +1,13 @@
-import { FlatCompat } from "@eslint/eslintrc";
-
-// ESLint flat config (Next.js 15 default format).
-// next/core-web-vitals extends next/recommended with stricter rules around
-// performance (no img tags, no sync scripts, etc.).
-// next/typescript adds TypeScript-specific rules on top.
-const compat = new FlatCompat({
-  baseDirectory: import.meta.dirname,
-});
+// ESLint flat config — native format, no FlatCompat bridge needed.
+// eslint-config-next v16 exports flat config arrays directly, so we import them
+// as ES modules and spread them in. FlatCompat is only needed for legacy
+// eslintrc-style shared configs; eslint-config-next v16 no longer requires it.
+import nextConfig from "eslint-config-next/core-web-vitals";
+import tsConfig from "eslint-config-next/typescript";
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...nextConfig,
+  ...tsConfig,
   {
     rules: {
       // Enforce explicit return types on exported functions — makes the service
