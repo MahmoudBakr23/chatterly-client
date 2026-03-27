@@ -1,21 +1,20 @@
 /* ─── Tailwind v4 entry point ────────────────────────────────────────────────
    @import "tailwindcss" replaces the old @tailwind base/components/utilities
-   directives. Tailwind v4 reads this file via @tailwindcss/postcss, discovers
-   all utility usage by scanning the source tree, and generates only what's used.
-   No tailwind.config.ts needed — custom design tokens go in @theme below. */
+   directives.
+
+   Design tokens are defined as CSS variables in `:root`, and then mapped to
+   Tailwind theme keys via `tailwind.config.ts`. */
 @import "tailwindcss";
 
-/* ─── Design tokens via @theme ───────────────────────────────────────────────
-   Tailwind v4's @theme block converts CSS custom properties into utility classes.
-   Every --color-* becomes bg-*, text-*, border-* utilities automatically.
-   Every --radius-* becomes rounded-* utilities, etc.
+/* ─── Design tokens ─────────────────────────────────────────────────────────
+   These CSS variables back the Tailwind utilities (see `tailwind.config.ts`).
 
    Philosophy: minimalist, modern, elegant.
      - One accent color (muted indigo) — restraint signals confidence
      - Neutral grayscale backbone — let content breathe
      - Consistent rounding — geometric precision
      - Subtle shadows — depth without drama                              */
-@theme {
+:root {
   /* ── Neutral palette ─────────────────────────────────────────────────────
      oklch() is a perceptually uniform color space — equal numeric steps look
      equally different to the human eye. Better for accessibility than hex.  */
