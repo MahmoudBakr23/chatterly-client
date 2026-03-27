@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # Keep npm packages up to date — mirrors bundler config in chatterly-api
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+
+  # Keep GitHub Actions up to date
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10

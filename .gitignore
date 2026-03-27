@@ -1,0 +1,33 @@
+# ─── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+
+# ─── Next.js build output ──────────────────────────────────────────────────────
+.next/
+out/
+
+# ─── Environment files ─────────────────────────────────────────────────────────
+# Commit .env.example only — never the real values.
+# Mirrors the same rule in chatterly-api.
+.env*
+!.env.example
+
+# ─── Logs ──────────────────────────────────────────────────────────────────────
+/log/*
+!/log/.keep
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── Temp / OS ─────────────────────────────────────────────────────────────────
+/tmp/*
+!/tmp/.keep
+.DS_Store
+Thumbs.db
+
+# ─── TypeScript ────────────────────────────────────────────────────────────────
+*.tsbuildinfo
+next-env.d.ts
+
+# ─── Claude Code local settings ────────────────────────────────────────────────
+# Same rule as chatterly-api — local Claude config is machine-specific, not shared.
+/.claude

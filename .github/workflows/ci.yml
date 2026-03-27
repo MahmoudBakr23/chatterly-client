@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  # ─── Type check ─────────────────────────────────────────────────────────────
+  # Equivalent of `bin/brakeman` on the Rails side: catches type errors before
+  # they reach runtime. tsc --noEmit compiles the project without emitting files
+  # — it only reports type errors.
+  type_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+  # ─── Lint ───────────────────────────────────────────────────────────────────
+  # Equivalent of `bin/rubocop` on the Rails side. ESLint enforces code style
+  # and catches common React/Next.js anti-patterns.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+  # ─── Build ──────────────────────────────────────────────────────────────────
+  # Verifies the production build compiles cleanly. Catches import errors,
+  # missing env var references, and broken dynamic imports that type-check misses.
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # Provide stub values so Next.js doesn't fail on missing env vars at build time.
+      # These are not real credentials — just shape-fillers for the build step.
+      API_URL: http://localhost:3001
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_CABLE_URL: ws://localhost:3001/cable
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
