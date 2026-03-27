@@ -19,12 +19,17 @@
     "noEmit": true,
     // ─── JSX ─────────────────────────────────────────────────────────────────
     // preserve: Next.js handles JSX transformation itself via SWC/Turbopack.
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     // ─── Interop ─────────────────────────────────────────────────────────────
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    // ─── TypeScript 6 migration ───────────────────────────────────────────────
+    // baseUrl is deprecated in TS6 (removed in TS7). Suppressing the warning
+    // here until Next.js drops the baseUrl requirement for @/* path aliases.
+    // Track: https://aka.ms/ts6 for full migration guidance.
+    "ignoreDeprecations": "6.0",
     // ─── Path aliases ────────────────────────────────────────────────────────
     // @/* maps to the project root, so `import { cn } from "@/lib/utils"` works
     // from any depth. Keeps imports clean and refactor-friendly.
@@ -50,7 +55,8 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
