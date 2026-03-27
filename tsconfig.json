@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    // ─── Language target ──────────────────────────────────────────────────────
+    // ES2017+ enables async/await without transpiling to Promise chains.
+    // bundler resolution matches how Next.js (via Turbopack/webpack) resolves modules.
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+
+    // ─── Strictness ───────────────────────────────────────────────────────────
+    // strict: true enables noImplicitAny, strictNullChecks, and more.
+    // This is what makes TypeScript actually useful — loose TypeScript is worse
+    // than no TypeScript because it gives false confidence.
+    "strict": true,
+    "noEmit": true,
+
+    // ─── JSX ─────────────────────────────────────────────────────────────────
+    // preserve: Next.js handles JSX transformation itself via SWC/Turbopack.
+    "jsx": "preserve",
+
+    // ─── Interop ─────────────────────────────────────────────────────────────
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+
+    // ─── Path aliases ────────────────────────────────────────────────────────
+    // @/* maps to the project root, so `import { cn } from "@/lib/utils"` works
+    // from any depth. Keeps imports clean and refactor-friendly.
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    },
+
+    // ─── Plugins ─────────────────────────────────────────────────────────────
+    // next plugin integrates TypeScript checking with Next.js internals
+    // (e.g. validates metadata exports, page prop types, etc.)
+    "plugins": [{ "name": "next" }],
+    "skipLibCheck": true
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
