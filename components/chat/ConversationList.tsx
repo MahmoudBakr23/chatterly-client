@@ -1,32 +1,32 @@
 "use client";
 
 // ─── ConversationList ─────────────────────────────────────────────────────────
-// The sidebar panel — fetches all conversations on mount and renders them as
-// a scrollable list of ConversationItem rows.
+// The scrollable conversation list inside the sidebar.
+// Fetches all conversations on mount and renders them as ConversationItem rows.
 //
 // Backend connection:
-//   Calls getConversations() → GET /api/v1/conversations (:with_members view)
-//   Returns ConversationWithMembers[] so each row can render a presence dot
-//   for DMs without a second request.
-//   The list is re-sorted in the store when a new message arrives (addMessage action
-//   moves the active conversation to the top), so this component stays reactive.
+//   getConversations() → GET /api/v1/conversations (:with_members view)
+//   Returns ConversationWithMembers[] so each row can render an avatar and
+//   a presence dot for DMs without a second request.
 //
-// Scalability notes:
-//   - The list renders all conversations the user belongs to at once.
-//     For users in 100+ conversations a virtualised list (react-virtual) would be
-//     needed — not required until Phase 6.
-//   - Error state shows a retry button rather than crashing the whole layout.
+// onNewConversation: callback from the layout to open the NewConversationModal,
+//   used both by the header compose button and the empty-state CTA here.
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
+import { MessageCirclePlus } from "lucide-react";
 import { useConversationsStore } from "@/store/conversations.store";
 import { useAuthStore } from "@/store/auth.store";
 import { getConversations } from "@/services/conversations.service";
 import { ConversationItem } from "@/components/chat/ConversationItem";
 import { Spinner } from "@/components/ui/spinner";
 
-export function ConversationList() {
+interface ConversationListProps {
+  onNewConversation: () => void;
+}
+
+export function ConversationList({ onNewConversation }: ConversationListProps) {
   const { conversations, isLoadingConversations, setConversations, setLoadingConversations } =
     useConversationsStore();
   const currentUser = useAuthStore((state) => state.user);
@@ -48,7 +48,6 @@ export function ConversationList() {
       .finally(() => setLoadingConversations(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ─── Loading state ─────────────────────────────────────────────────────────
   if (isLoadingConversations) {
     return (
       <div className="flex flex-1 items-center justify-center">
@@ -57,17 +56,26 @@ export function ConversationList() {
     );
   }
 
-  // ─── Empty state ───────────────────────────────────────────────────────────
   if (conversations.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
-        <p className="text-foreground text-xs font-medium">No conversations yet</p>
-        <p className="text-muted text-xs">Start one from your contacts.</p>
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+        <div className="bg-accent-muted flex h-12 w-12 items-center justify-center rounded-full">
+          <MessageCirclePlus size={22} className="text-accent" />
+        </div>
+        <div>
+          <p className="text-foreground text-sm font-medium">No conversations yet</p>
+          <p className="text-muted mt-0.5 text-xs">Start a new chat or create a group.</p>
+        </div>
+        <button
+          onClick={onNewConversation}
+          className="bg-accent text-accent-foreground hover:bg-accent-hover mt-1 rounded-md px-4 py-2 text-xs font-medium transition-colors"
+        >
+          Start a conversation
+        </button>
       </div>
     );
   }
 
-  // ─── Conversation list ─────────────────────────────────────────────────────
   return (
     <nav
       aria-label="Conversations"

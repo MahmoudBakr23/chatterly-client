@@ -31,7 +31,7 @@ export async function initiateCall(
   callType: "audio" | "video",
 ): Promise<CallSession> {
   const { data } = await axiosInstance.post<ApiSuccess<CallSession>>(
-    `/conversations/${conversationId}/calls`,
+    `/api/v1/conversations/${conversationId}/calls`,
     { call: { call_type: callType } },
   );
   return data.data;
@@ -40,7 +40,7 @@ export async function initiateCall(
 // endCall — marks the session as ended and broadcasts call_ended to participants.
 // Called both by the initiator (hang up before answered) and mid-call by anyone.
 export async function endCall(conversationId: number, callId: number): Promise<void> {
-  await axiosInstance.delete(`/conversations/${conversationId}/calls/${callId}`);
+  await axiosInstance.delete(`/api/v1/conversations/${conversationId}/calls/${callId}`);
 }
 
 // getActiveCall — fetches a ringing or active call for a conversation.
@@ -49,7 +49,7 @@ export async function endCall(conversationId: number, callId: number): Promise<v
 export async function getActiveCall(conversationId: number): Promise<CallSession | null> {
   try {
     const { data } = await axiosInstance.get<ApiSuccess<CallSession>>(
-      `/conversations/${conversationId}/calls/active`,
+      `/api/v1/conversations/${conversationId}/calls/active`,
     );
     return data.data;
   } catch {

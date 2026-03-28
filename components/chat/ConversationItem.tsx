@@ -2,111 +2,85 @@
 
 // ─── ConversationItem ─────────────────────────────────────────────────────────
 // A single row in the sidebar conversation list.
-// Renders the conversation name (or the other member's display_name for DMs),
-// a member count badge for group conversations, a presence dot for DMs,
-// and highlights when active.
+//
+// DMs:    shows the other person's UserAvatar + display name + presence dot.
+// Groups: shows a colored group icon + group name + member count.
 //
 // Backend connection:
-//   Receives a ConversationWithMembers — includes the members array so we can
-//   derive the other user's display_name and id for presence dot rendering.
-//   Presence status is read live from the presence store (populated by
-//   usePresence → PresenceChannel), not from the Conversation object itself.
+//   Receives ConversationWithMembers — members array lets us find the other
+//   user in a DM and render their avatar without a second request.
+//   Presence status is read live from the presence store (PresenceChannel).
 //
-// Scalability notes:
-//   Pure presentational row — no data fetching.
-//   PresenceDot subscribes narrowly to its own user's status, avoiding full
-//   re-renders when unrelated users change status.
+// Active state uses the sidebar-active background + accent text so selected
+// conversations stand out clearly from the purple-tinted sidebar.
 
 import Link from "next/link";
+import { Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { PresenceDot } from "@/components/ui/PresenceDot";
 import type { ConversationWithMembers } from "@/types";
 
 interface ConversationItemProps {
   conversation: ConversationWithMembers;
   isActive: boolean;
-  // The current user's id — used to identify the "other" member in a DM
   currentUserId: number;
 }
 
 export function ConversationItem({ conversation, isActive, currentUserId }: ConversationItemProps) {
-  // For DMs: show the other member's display_name.
-  // For groups: use the stored name or a fallback.
-  const otherMember =
-    conversation.conversation_type === "direct"
-      ? conversation.members.find((m) => m.id !== currentUserId)
-      : null;
+  const isDirect = conversation.conversation_type === "direct";
+
+  // For DMs: find the other member (not the current user)
+  const otherMember = isDirect
+    ? conversation.members.find((m) => m.id !== currentUserId)
+    : null;
 
   const label =
     otherMember?.display_name ??
+    otherMember?.username ??
     conversation.name ??
-    (conversation.conversation_type === "direct" ? "Direct Message" : "Group Chat");
+    (isDirect ? "Direct Message" : "Group Chat");
 
   return (
     <Link
       href={`/conversations/${conversation.id}`}
       className={cn(
-        "flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 transition-colors",
-        "hover:bg-surface-muted",
-        isActive && "bg-accent-muted text-accent",
+        "flex items-center gap-3 rounded-md px-2.5 py-2 transition-colors",
+        isActive
+          ? "bg-sidebar-active text-accent"
+          : "hover:bg-sidebar-hover text-foreground",
       )}
     >
-      {/* ── Avatar / icon with presence dot ────────────────────────────────── */}
+      {/* ── Avatar ─────────────────────────────────────────────────────────── */}
       <div className="relative flex-shrink-0">
-        <div
-          className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium",
-            isActive ? "bg-accent text-accent-foreground" : "bg-surface-muted text-muted",
-          )}
-          aria-hidden="true"
-        >
-          {conversation.conversation_type === "direct" ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-          )}
-        </div>
+        {isDirect && otherMember ? (
+          // DM: show the other person's actual avatar
+          <UserAvatar user={otherMember} size="md" />
+        ) : (
+          // Group: colored circle with a group icon
+          <div
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-full",
+              isActive
+                ? "bg-accent text-accent-foreground"
+                : "bg-accent-muted text-accent",
+            )}
+          >
+            <Users size={15} />
+          </div>
+        )}
 
-        {/* Presence dot — shown only for DMs where we know the other user's id */}
-        {otherMember && (
+        {/* Presence dot — only for DMs */}
+        {isDirect && otherMember && (
           <PresenceDot
             userId={otherMember.id}
             size="sm"
-            // Positioned at bottom-right of the avatar circle
-            className="ring-surface absolute -right-0.5 -bottom-0.5 ring-2"
+            className="ring-sidebar absolute -right-0.5 -bottom-0.5 ring-2"
           />
         )}
       </div>
 
-      {/* ── Label + meta ─────────────────────────────────────────────────────── */}
+      {/* ── Label + meta ─────────────────────────────────────────────────── */}
       <div className="min-w-0 flex-1">
         <p
           className={cn(
@@ -116,8 +90,10 @@ export function ConversationItem({ conversation, isActive, currentUserId }: Conv
         >
           {label}
         </p>
-        {conversation.conversation_type === "group" && (
-          <p className="text-muted text-xs">{conversation.member_count} members</p>
+        {!isDirect && (
+          <p className={cn("text-xs", isActive ? "text-accent/70" : "text-muted")}>
+            {conversation.member_count} members
+          </p>
         )}
       </div>
     </Link>

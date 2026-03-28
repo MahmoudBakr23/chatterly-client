@@ -88,9 +88,11 @@ export interface CallSession {
   conversation_id: number;
   initiator_id: number;
   call_type: "audio" | "video";
-  // "pending" → "active" → "ended". The UI uses this to decide which call screen
-  // to show: pending = ringing, active = in-call, ended = post-call summary.
-  status: "pending" | "active" | "ended";
+  // Full status lifecycle matching the Rails CallSession enum:
+  // calling (0) → no answer yet, ringing (1) → online recipient notified,
+  // active (2) → someone joined, ended (3) → host ended,
+  // declined (4) → callee rejected, missed (5) → no answer in 30s
+  status: "calling" | "ringing" | "active" | "ended" | "declined" | "missed";
   created_at: string;
 }
 

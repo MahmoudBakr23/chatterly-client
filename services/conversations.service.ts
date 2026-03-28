@@ -41,13 +41,29 @@ export async function getConversation(id: number): Promise<ConversationWithMembe
 
 // ─── createDirectConversation() ──────────────────────────────────────────────
 // Creates a new 1-on-1 direct conversation with the given user.
-// POST /api/v1/conversations with { conversation_type: "direct", member_ids: [userId] }
-// Rails will return an existing direct conversation if one already exists between
-// the two users rather than creating a duplicate.
+// POST /api/v1/conversations — Rails returns existing DM if one already exists
+// (deduplication happens at the DB level via the unique index on members).
+// Rails wrap_parameters automatically wraps top-level keys into { conversation: {} }.
 export async function createDirectConversation(userId: number): Promise<ConversationWithMembers> {
   const response = await api.post<ApiSuccess<ConversationWithMembers>>("/api/v1/conversations", {
     conversation_type: "direct",
     member_ids: [userId],
+  });
+  return response.data.data;
+}
+
+// ─── createGroupConversation() ───────────────────────────────────────────────
+// Creates a named group conversation with multiple members.
+// POST /api/v1/conversations — wrap_parameters handles the { conversation: {} } wrapping.
+// The creator is always added as an admin member by the Rails controller.
+export async function createGroupConversation(
+  name: string,
+  memberIds: number[],
+): Promise<ConversationWithMembers> {
+  const response = await api.post<ApiSuccess<ConversationWithMembers>>("/api/v1/conversations", {
+    name,
+    conversation_type: "group",
+    member_ids: memberIds,
   });
   return response.data.data;
 }
