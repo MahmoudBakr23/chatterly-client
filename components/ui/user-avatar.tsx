@@ -38,7 +38,7 @@ export function UserAvatar({ user, size = "md" }: UserAvatarProps) {
   // Fallback: first letter of display_name
   return (
     <div
-      className={`${sizeClass} flex items-center justify-center rounded-full bg-surface-muted font-medium text-muted`}
+      className={`${sizeClass} bg-surface-muted text-muted flex items-center justify-center rounded-full font-medium`}
     >
       {user.display_name.charAt(0).toUpperCase()}
     </div>

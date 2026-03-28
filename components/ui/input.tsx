@@ -26,7 +26,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           type={type}
           className={cn(
             // Base: full-width, consistent height, standard border
-            "w-full rounded-md border bg-surface px-3 py-2 text-sm text-foreground",
+            "bg-surface text-foreground w-full rounded-md border px-3 py-2 text-sm",
             // Placeholder: muted color from design tokens
             "placeholder:text-muted",
             // Default border vs error border — communicates validation state
@@ -36,7 +36,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             // Disabled: same visual language as Button — dim + no-pointer
             "disabled:cursor-not-allowed disabled:opacity-50",
             // Focus: use outline from globals.css :focus-visible, remove default ring
-            "focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1",
+            "focus-visible:ring-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
             className,
           )}
           // aria-invalid tells screen readers this field has an error —
@@ -47,7 +47,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
         {/* Validation error message */}
         {error && (
-          <p className="text-xs text-destructive" role="alert">
+          <p className="text-destructive text-xs" role="alert">
             {error}
           </p>
         )}

@@ -61,11 +61,11 @@ export async function POST(request: NextRequest) {
   // request to our Next.js server (including WebSocket upgrade for Action Cable).
   const cookieStore = await cookies();
   cookieStore.set("auth_token", token, {
-    httpOnly: true,                               // JS cannot read it — XSS protection
+    httpOnly: true, // JS cannot read it — XSS protection
     secure: process.env.NODE_ENV === "production", // HTTPS only in prod
-    sameSite: "lax",                              // Sent on top-level navigations, not cross-site POSTs
+    sameSite: "lax", // Sent on top-level navigations, not cross-site POSTs
     maxAge: JWT_MAX_AGE_SECONDS,
-    path: "/",                                    // Available site-wide
+    path: "/", // Available site-wide
   });
 
   // Return user + token in the body. The client stores the token in Zustand memory

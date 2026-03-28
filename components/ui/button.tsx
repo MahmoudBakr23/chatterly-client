@@ -40,11 +40,7 @@ const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
     "active:scale-[0.98]",
   ].join(" "),
 
-  ghost: [
-    "text-foreground",
-    "hover:bg-surface-muted",
-    "active:scale-[0.98]",
-  ].join(" "),
+  ghost: ["text-foreground", "hover:bg-surface-muted", "active:scale-[0.98]"].join(" "),
 
   destructive: [
     "bg-destructive text-destructive-foreground",

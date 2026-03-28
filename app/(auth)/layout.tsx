@@ -13,14 +13,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       // Full viewport height, centered both axes.
       // bg-surface-muted gives a very subtle off-white that makes the white
       // auth card appear to "float" without a heavy shadow.
-      className="flex min-h-screen items-center justify-center bg-surface-muted px-4"
+      className="bg-surface-muted flex min-h-screen items-center justify-center px-4"
     >
       <div className="w-full max-w-sm">
         {/* Chatterly wordmark — kept minimal, no heavy logo */}
         <div className="mb-8 text-center">
-          <span className="text-2xl font-semibold tracking-tight text-foreground">
-            Chatterly
-          </span>
+          <span className="text-foreground text-2xl font-semibold tracking-tight">Chatterly</span>
         </div>
 
         {children}
