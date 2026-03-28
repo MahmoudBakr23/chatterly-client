@@ -59,7 +59,7 @@ export interface Message {
   content: string;
   // "text" | "image" | "file" — controls render strategy (future phases)
   message_type: "text" | "image" | "file";
-  edited_at: string | null;       // null means never edited
+  edited_at: string | null; // null means never edited
   created_at: string;
   parent_message_id: number | null; // thread support (future phase)
   // Nested user — rendered via UserBlueprint :public (no email).
@@ -75,7 +75,7 @@ export interface Message {
 // Source: app/blueprints/reaction_blueprint.rb
 export interface Reaction {
   id: number;
-  emoji: string;      // e.g. "👍", "❤️"
+  emoji: string; // e.g. "👍", "❤️"
   message_id: number;
   user_id: number;
 }

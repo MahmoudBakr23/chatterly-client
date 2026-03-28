@@ -32,31 +32,31 @@ import { useAuthStore } from "@/store/auth.store";
 //   - password: minimum 8 chars (Devise default)
 //   - username: alphanumeric + underscore, 3-20 chars (backend validates this)
 //   - display_name: just non-empty
-const registerSchema = z.object({
-  display_name: z
-    .string()
-    .min(1, "Display name is required")
-    .max(50, "Display name must be 50 characters or less"),
-  username: z
-    .string()
-    .min(3, "Username must be at least 3 characters")
-    .max(20, "Username must be 20 characters or less")
-    .regex(/^[a-z0-9_]+$/, "Username may only contain lowercase letters, numbers, and underscores"),
-  email: z
-    .string()
-    .min(1, "Email is required")
-    .email("Enter a valid email address"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters"),
-  password_confirmation: z.string(),
-}).refine((data) => data.password === data.password_confirmation, {
-  // Cross-field validation: confirm matches password — checked entirely client-side.
-  // No need to send password_confirmation to the backend; Devise doesn't require it
-  // when we supply password directly.
-  message: "Passwords do not match",
-  path: ["password_confirmation"],
-});
+const registerSchema = z
+  .object({
+    display_name: z
+      .string()
+      .min(1, "Display name is required")
+      .max(50, "Display name must be 50 characters or less"),
+    username: z
+      .string()
+      .min(3, "Username must be at least 3 characters")
+      .max(20, "Username must be 20 characters or less")
+      .regex(
+        /^[a-z0-9_]+$/,
+        "Username may only contain lowercase letters, numbers, and underscores",
+      ),
+    email: z.string().min(1, "Email is required").email("Enter a valid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    password_confirmation: z.string(),
+  })
+  .refine((data) => data.password === data.password_confirmation, {
+    // Cross-field validation: confirm matches password — checked entirely client-side.
+    // No need to send password_confirmation to the backend; Devise doesn't require it
+    // when we supply password directly.
+    message: "Passwords do not match",
+    path: ["password_confirmation"],
+  });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
@@ -100,10 +100,10 @@ export function RegisterForm() {
   const isLoading = isSubmitting || isPending;
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-8 shadow-sm">
+    <div className="border-border bg-surface rounded-lg border p-8 shadow-sm">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-foreground">Create an account</h1>
-        <p className="mt-1 text-sm text-muted">Join Chatterly in seconds.</p>
+        <h1 className="text-foreground text-xl font-semibold">Create an account</h1>
+        <p className="text-muted mt-1 text-sm">Join Chatterly in seconds.</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
@@ -179,9 +179,9 @@ export function RegisterForm() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-muted">
+      <p className="text-muted mt-6 text-center text-sm">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-accent hover:underline">
+        <Link href="/login" className="text-accent font-medium hover:underline">
           Sign in
         </Link>
       </p>

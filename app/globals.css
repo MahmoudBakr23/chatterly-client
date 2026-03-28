@@ -18,20 +18,20 @@
   /* ── Neutral palette ─────────────────────────────────────────────────────
      oklch() is a perceptually uniform color space — equal numeric steps look
      equally different to the human eye. Better for accessibility than hex.  */
-  --color-background: oklch(0.98 0 0);       /* near-white page canvas */
-  --color-foreground: oklch(0.12 0 0);       /* near-black primary text */
-  --color-surface: oklch(1 0 0);             /* pure white for cards, panels */
-  --color-surface-muted: oklch(0.96 0 0);    /* subtle alternating backgrounds */
-  --color-border: oklch(0.90 0 0);           /* dividers, input borders */
-  --color-muted: oklch(0.58 0 0);            /* secondary text, placeholders */
+  --color-background: oklch(0.98 0 0); /* near-white page canvas */
+  --color-foreground: oklch(0.12 0 0); /* near-black primary text */
+  --color-surface: oklch(1 0 0); /* pure white for cards, panels */
+  --color-surface-muted: oklch(0.96 0 0); /* subtle alternating backgrounds */
+  --color-border: oklch(0.9 0 0); /* dividers, input borders */
+  --color-muted: oklch(0.58 0 0); /* secondary text, placeholders */
 
   /* ── Accent — the single brand color ────────────────────────────────────
      One accent color keeps the palette disciplined. Muted indigo reads as
      calm and professional — appropriate for a communication tool.          */
   --color-accent: oklch(0.46 0.16 265);
-  --color-accent-hover: oklch(0.40 0.16 265);
+  --color-accent-hover: oklch(0.4 0.16 265);
   --color-accent-muted: oklch(0.94 0.04 265); /* subtle tinted backgrounds */
-  --color-accent-foreground: oklch(1 0 0);    /* white text on accent bg */
+  --color-accent-foreground: oklch(1 0 0); /* white text on accent bg */
 
   /* ── Semantic states ─────────────────────────────────────────────────────*/
   --color-destructive: oklch(0.55 0.22 25);
@@ -48,10 +48,10 @@
   /* ── Border radius ────────────────────────────────────────────────────────
      Consistent rounding across components. We define three tiers:
      sm → form elements, md → cards, lg → modals/sheets.                   */
-  --radius-sm: 0.375rem;   /* 6px  — inputs, badges */
-  --radius-md: 0.625rem;   /* 10px — buttons, cards */
-  --radius-lg: 1rem;       /* 16px — modals, sheets */
-  --radius-full: 9999px;   /* pills, avatars */
+  --radius-sm: 0.375rem; /* 6px  — inputs, badges */
+  --radius-md: 0.625rem; /* 10px — buttons, cards */
+  --radius-lg: 1rem; /* 16px — modals, sheets */
+  --radius-full: 9999px; /* pills, avatars */
 
   /* ── Shadows — subtle depth without drama ────────────────────────────────*/
   --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.04);

@@ -14,22 +14,20 @@ import { cn } from "@/lib/utils";
 
 type LabelProps = LabelHTMLAttributes<HTMLLabelElement>;
 
-const Label = forwardRef<HTMLLabelElement, LabelProps>(
-  ({ className, ...props }, ref) => {
-    return (
-      <label
-        ref={ref}
-        className={cn(
-          "text-sm font-medium text-foreground",
-          // cursor-default prevents the text cursor on click — labels shouldn't look editable
-          "cursor-default select-none",
-          className,
-        )}
-        {...props}
-      />
-    );
-  },
-);
+const Label = forwardRef<HTMLLabelElement, LabelProps>(({ className, ...props }, ref) => {
+  return (
+    <label
+      ref={ref}
+      className={cn(
+        "text-foreground text-sm font-medium",
+        // cursor-default prevents the text cursor on click — labels shouldn't look editable
+        "cursor-default select-none",
+        className,
+      )}
+      {...props}
+    />
+  );
+});
 
 Label.displayName = "Label";
 

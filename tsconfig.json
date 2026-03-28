@@ -4,11 +4,7 @@
     // ES2017+ enables async/await without transpiling to Promise chains.
     // bundler resolution matches how Next.js (via Turbopack/webpack) resolves modules.
     "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "module": "esnext",
     "moduleResolution": "bundler",
     // ─── Strictness ───────────────────────────────────────────────────────────
@@ -31,9 +27,7 @@
     // Note: baseUrl is omitted — TypeScript 6 resolves paths entries relative
     // to the tsconfig file location by default, so baseUrl is redundant here.
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     },
     // ─── Plugins ─────────────────────────────────────────────────────────────
     // next plugin integrates TypeScript checking with Next.js internals
@@ -54,7 +48,5 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }
