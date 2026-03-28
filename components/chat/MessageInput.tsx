@@ -22,6 +22,7 @@ import { useRef, useEffect, useState, lazy, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { sendMessage } from "@/services/messages.service";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -88,9 +89,13 @@ export function MessageInput({ conversationId }: MessageInputProps) {
   }
 
   async function onSubmit(values: FormValues) {
-    await sendMessage(conversationId, values.content.trim());
-    reset();
-    setShowPicker(false);
+    try {
+      await sendMessage(conversationId, values.content.trim());
+      reset();
+      setShowPicker(false);
+    } catch {
+      toast.error("Failed to send message. Please try again.");
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {

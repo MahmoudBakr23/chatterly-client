@@ -42,6 +42,50 @@ export function formatRelativeTime(isoString: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+// ─── formatMessageTime() ─────────────────────────────────────────────────────
+// Chat-appropriate timestamp for message bubbles — richer than formatRelativeTime.
+//
+// Format rules:
+//   < 1 min           → "just now"
+//   < 60 min          → "5m ago"
+//   same calendar day → "Today at 3:41 PM"
+//   yesterday         → "Yesterday at 3:41 PM"
+//   within 7 days     → "Monday at 3:41 PM"
+//   older             → "Dec 15"
+//
+// Used in MessageItem. Intentionally static at render time — no live-updating
+// interval. Timestamps only re-compute on React re-renders (e.g. new message
+// appended). A live counter would require a setInterval in every row.
+export function formatMessageTime(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSecs = Math.floor(diffMs / 1_000);
+  const diffMins = Math.floor(diffSecs / 60);
+
+  if (diffSecs < 60) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+
+  const timeStr = new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+
+  if (date.toDateString() === now.toDateString()) return `Today at ${timeStr}`;
+
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) return `Yesterday at ${timeStr}`;
+
+  const diffDays = Math.floor(diffMs / 86_400_000);
+  if (diffDays < 7) {
+    const day = new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(date);
+    return `${day} at ${timeStr}`;
+  }
+
+  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
+}
+
 // ─── getInitials() ───────────────────────────────────────────────────────────
 // Generates a 1-2 letter avatar placeholder from a display name or username.
 // Used when avatar_url is null — the backend stores this as nullable.

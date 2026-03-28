@@ -5,6 +5,11 @@
 // Orchestrates: fetching the conversation + its messages, subscribing to the
 // Action Cable channel, and rendering the message list + input.
 //
+// Phase 5 additions:
+//   - Message grouping: consecutive messages from the same sender within 5 minutes
+//     are passed isGrouped=true, suppressing the repeated avatar and name header.
+//   - Toast error notifications on failed conversation/message fetch.
+//
 // Backend connection:
 //   - getConversation(id)  → GET /api/v1/conversations/:id (:with_members view)
 //   - getMessages(id)      → GET /api/v1/conversations/:id/messages (paginated)
@@ -21,6 +26,7 @@
 //     (token is confirmed in useConversationChannel).
 
 import { useEffect, useRef, useCallback } from "react";
+import { toast } from "sonner";
 import { useConversationsStore } from "@/store/conversations.store";
 import { useAuthStore } from "@/store/auth.store";
 import { usePresenceStore } from "@/store/presence.store";
@@ -33,6 +39,18 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { PresenceDot } from "@/components/ui/PresenceDot";
 import { Spinner } from "@/components/ui/spinner";
 import { CallButton } from "@/components/call/CallButton";
+import type { Message } from "@/types";
+
+// Two consecutive messages are grouped when they share the same sender and were
+// sent within this threshold. Keeps the thread compact for fast back-and-forth.
+const GROUP_THRESHOLD_MS = 5 * 60 * 1_000; // 5 minutes
+
+function isGroupedWith(prev: Message, curr: Message): boolean {
+  if (prev.user.id !== curr.user.id) return false;
+  return (
+    new Date(curr.created_at).getTime() - new Date(prev.created_at).getTime() < GROUP_THRESHOLD_MS
+  );
+}
 
 interface MessageThreadProps {
   conversationId: number;
@@ -71,7 +89,7 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
         setMessages(conversationId, page.messages, page.next_cursor);
       })
       .catch(() => {
-        // On error leave the state empty — the empty/error state below handles it.
+        toast.error("Failed to load conversation. Please try again.");
       })
       .finally(() => setLoadingMessages(false));
 
@@ -118,6 +136,8 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
       if (scrollContainer) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight - prevScrollHeight;
       }
+    } catch {
+      toast.error("Failed to load earlier messages.");
     } finally {
       setLoadingMessages(false);
     }
@@ -180,14 +200,12 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
 
       {/* ── Message list ───────────────────────────────────────────────────────
           flex-1 + overflow-y-auto makes this area scroll independently.
-          The bottom sentinel div triggers auto-scroll on new messages.         */}
-      <div
-        ref={scrollContainerRef}
-        className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4"
-      >
+          The bottom sentinel div triggers auto-scroll on new messages.
+          gap-0 here — MessageItem controls its own top padding via isGrouped.  */}
+      <div ref={scrollContainerRef} className="flex flex-1 flex-col overflow-y-auto px-4 py-4">
         {/* Load earlier button — only shown if more pages exist */}
         {nextCursor && (
-          <div className="flex justify-center">
+          <div className="flex justify-center pb-2">
             <button
               onClick={loadEarlier}
               disabled={isLoadingMessages}
@@ -205,13 +223,21 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
           </div>
         )}
 
-        {threadMessages.map((message) => (
-          <MessageItem
-            key={message.id}
-            message={message}
-            isOwn={message.user.id === currentUser?.id}
-          />
-        ))}
+        {/* Message list — isGrouped computed by comparing each message to the
+            previous one. The first message in the list is never grouped.      */}
+        {threadMessages.map((message, index) => {
+          const prev = threadMessages[index - 1];
+          const grouped = !!prev && isGroupedWith(prev, message);
+
+          return (
+            <MessageItem
+              key={message.id}
+              message={message}
+              isOwn={message.user.id === currentUser?.id}
+              isGrouped={grouped}
+            />
+          );
+        })}
 
         {/* Scroll sentinel */}
         <div ref={bottomRef} aria-hidden="true" />

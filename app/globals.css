@@ -89,6 +89,25 @@ body {
   overflow-x: hidden;
 }
 
+/* ─── Message appear animation ───────────────────────────────────────────────
+   Applied to every MessageItem so new real-time messages slide in smoothly.
+   The 0.18s duration is short enough to feel instant on initial list load
+   but noticeable enough to feel alive when a single message arrives.        */
+@keyframes message-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-message-in {
+  animation: message-in 0.18s var(--ease-smooth) both;
+}
+
 /* ─── Focus ring — accessibility ─────────────────────────────────────────────
    Visible focus rings are required for keyboard navigation (WCAG 2.4.7).
    We use a custom ring that matches the accent palette instead of the default
