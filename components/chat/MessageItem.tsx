@@ -3,25 +3,19 @@
 // ─── MessageItem ──────────────────────────────────────────────────────────────
 // Renders a single message bubble in the thread.
 //
-// Phase 5 additions:
-//   - isGrouped prop: when the previous message is from the same sender within
-//     5 minutes, we suppress the avatar and sender header to reduce visual noise.
-//     The avatar area becomes a spacer so bubble alignment stays consistent.
-//   - Relative timestamps via formatMessageTime() (lib/utils.ts).
-//     Grouped messages show timestamp only as a title= tooltip to keep the
-//     bubble compact; ungrouped messages show it in the header.
-//   - animate-message-in CSS class: every bubble fades and slides up on mount.
-//     0.18s is short enough to feel instant on initial list load.
+// Design:
+//   - Own messages: right-aligned purple bubble (accent color)
+//   - Others: left-aligned, light surface bubble; avatar top-left near sender name
+//   - Grouped messages (same sender <5 min apart): suppress avatar + name header,
+//     tighten vertical spacing for a compact back-and-forth look
+//   - Bubbles use rounded-xl (20px) for a modern chat-app aesthetic
 //
 // Backend connection:
-//   Receives a Message (MessageBlueprint default view) which nests:
-//     - user: UserBlueprint :public (no email)
-//     - reactions: ReactionBlueprint[] bundled inline to avoid N+1 fetches
+//   Receives Message (MessageBlueprint default view):
+//     user → UserBlueprint :public (no email)
+//     reactions → ReactionBlueprint[] (bundled inline, no N+1)
 //
-// Scalability notes:
-//   - Avatar is rendered via UserAvatar (handles missing avatar_url with initials fallback).
-//   - groupReactions() runs per render — acceptable for typical reaction counts (<20).
-//     A useMemo would be premature here; add if profiling shows this as a bottleneck.
+// Scalability: groupReactions() runs per render — acceptable for <20 reactions.
 
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { cn } from "@/lib/utils";
@@ -30,15 +24,10 @@ import type { Message } from "@/types";
 
 interface MessageItemProps {
   message: Message;
-  // isOwn: true when the message belongs to the current user (right-aligned).
   isOwn: boolean;
-  // isGrouped: true when the previous message in the list is from the same sender
-  // within 5 minutes. Suppresses avatar + sender name for a cleaner thread.
   isGrouped?: boolean;
 }
 
-// Group reactions by emoji and count them.
-// e.g. [{ emoji: "👍" }, { emoji: "👍" }, { emoji: "❤️" }] → [{ emoji: "👍", count: 2 }, ...]
 function groupReactions(reactions: Message["reactions"]): { emoji: string; count: number }[] {
   const counts: Record<string, number> = {};
   for (const r of reactions) {
@@ -52,27 +41,25 @@ export function MessageItem({ message, isOwn, isGrouped = false }: MessageItemPr
   const timeLabel = formatMessageTime(message.created_at);
 
   return (
-    // animate-message-in: defined in globals.css — fade + slide-up on mount.
-    // pt-0.5 on grouped messages tightens the gap between consecutive bubbles.
     <div
       className={cn(
-        "animate-message-in flex items-end gap-2",
+        "animate-message-in flex items-start gap-2",
         isOwn ? "flex-row-reverse" : "flex-row",
         isGrouped ? "pt-0.5" : "pt-3",
       )}
     >
-      {/* ── Avatar (or spacer to keep bubble alignment) ───────────────────────
-          Grouped messages get a fixed-width spacer so their bubbles line up
-          with the non-grouped message above. Own messages skip this area.    */}
+      {/* ── Avatar (or fixed-width spacer for grouped) ────────────────────────
+          self-start keeps the avatar aligned to the top of the bubble column,
+          next to the sender name — not bottom-aligned with the bubble content. */}
       {!isOwn && (
-        <div className="w-7 flex-shrink-0 self-end">
+        <div className="w-7 flex-shrink-0 self-start pt-0.5">
           {!isGrouped && <UserAvatar user={message.user} size="sm" />}
         </div>
       )}
 
-      {/* ── Bubble + meta ─────────────────────────────────────────────────────── */}
-      <div className={cn("flex max-w-[70%] flex-col gap-1", isOwn && "items-end")}>
-        {/* Sender name + timestamp header — hidden for grouped messages */}
+      {/* ── Bubble + meta ─────────────────────────────────────────────────────*/}
+      <div className={cn("flex max-w-[72%] flex-col gap-1", isOwn && "items-end")}>
+        {/* Sender name + timestamp — hidden for grouped messages */}
         {!isGrouped && (
           <div
             className={cn(
@@ -81,27 +68,27 @@ export function MessageItem({ message, isOwn, isGrouped = false }: MessageItemPr
             )}
           >
             {!isOwn && (
-              <span className="text-foreground font-medium">{message.user.display_name}</span>
+              <span className="text-foreground font-semibold">{message.user.display_name || message.user.username}</span>
             )}
-            <span>{timeLabel}</span>
-            {message.edited_at && <span className="italic">(edited)</span>}
+            <span className="text-muted">{timeLabel}</span>
+            {message.edited_at && <span className="italic opacity-70">(edited)</span>}
           </div>
         )}
 
-        {/* Message bubble
-            title= shows the full timestamp on hover for grouped messages where
-            the header is suppressed.                                          */}
+        {/* Message bubble */}
         <div
           title={isGrouped ? timeLabel : undefined}
           className={cn(
-            "rounded-[var(--radius-md)] px-3 py-2 text-sm leading-relaxed",
-            isOwn ? "bg-accent text-accent-foreground" : "bg-surface-muted text-foreground",
+            "rounded-xl px-3.5 py-2 text-sm leading-relaxed",
+            isOwn
+              ? "bg-accent text-accent-foreground rounded-tr-sm"
+              : "bg-surface-muted text-foreground rounded-tl-sm",
           )}
         >
           {message.content}
         </div>
 
-        {/* Reaction pills — only rendered if there are reactions */}
+        {/* Reaction pills */}
         {grouped.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {grouped.map(({ emoji, count }) => (

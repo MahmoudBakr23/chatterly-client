@@ -56,6 +56,10 @@ interface ConversationsState {
   prependMessages: (conversationId: number, messages: Message[], nextCursor: number | null) => void;
   setLoadingMessages: (value: boolean) => void;
 
+  // Conversation list mutations
+  // Called when a new conversation is created via the UI so it appears immediately.
+  addConversation: (conversation: ConversationWithMembers) => void;
+
   // Action Cable mutation actions
   // Called by useConversationChannel when the backend broadcasts events.
   addMessage: (conversationId: number, message: Message) => void;
@@ -115,6 +119,16 @@ export const useConversationsStore = create<ConversationsState>()((set) => ({
     })),
 
   setLoadingMessages: (value) => set({ isLoadingMessages: value }),
+
+  // ─── Conversation list mutations ───────────────────────────────────────────
+
+  // Prepend a newly created conversation at the top of the sidebar list.
+  // Dedup guard prevents double-adding if the list was already populated.
+  addConversation: (conversation) =>
+    set((state) => {
+      if (state.conversations.some((c) => c.id === conversation.id)) return state;
+      return { conversations: [conversation, ...state.conversations] };
+    }),
 
   // ─── Action Cable mutation actions ─────────────────────────────────────────
 

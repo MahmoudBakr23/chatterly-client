@@ -16,10 +16,22 @@ export default {
         border: "var(--color-border)",
         muted: "var(--color-muted)",
 
+        // Sidebar — subtle purple-tinted surface
+        sidebar: "var(--color-sidebar)",
+        "sidebar-hover": "var(--color-sidebar-hover)",
+        "sidebar-active": "var(--color-sidebar-active)",
+        "sidebar-border": "var(--color-sidebar-border)",
+
+        // Primary purple accent
         accent: "var(--color-accent)",
         "accent-hover": "var(--color-accent-hover)",
         "accent-muted": "var(--color-accent-muted)",
         "accent-foreground": "var(--color-accent-foreground)",
+
+        // Secondary violet
+        secondary: "var(--color-secondary)",
+        "secondary-muted": "var(--color-secondary-muted)",
+        "secondary-foreground": "var(--color-secondary-foreground)",
 
         destructive: "var(--color-destructive)",
         "destructive-foreground": "var(--color-destructive-foreground)",
@@ -31,6 +43,7 @@ export default {
         sm: "var(--radius-sm)",
         md: "var(--radius-md)",
         lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
         full: "var(--radius-full)",
       },
       boxShadow: {

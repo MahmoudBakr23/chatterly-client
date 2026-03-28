@@ -26,7 +26,9 @@
 //     (token is confirmed in useConversationChannel).
 
 import { useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ArrowLeft, Users } from "lucide-react";
 import { useConversationsStore } from "@/store/conversations.store";
 import { useAuthStore } from "@/store/auth.store";
 import { usePresenceStore } from "@/store/presence.store";
@@ -57,6 +59,7 @@ interface MessageThreadProps {
 }
 
 export function MessageThread({ conversationId }: MessageThreadProps) {
+  const router = useRouter();
   const currentUser = useAuthStore((state) => state.user);
   const isOnline = usePresenceStore((state) => state.isOnline);
   const {
@@ -189,11 +192,20 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* ── Thread header ──────────────────────────────────────────────────────
-          Shows conversation name and member count (or online status for DMs).
-          Height matches the sidebar header (h-14) for visual alignment.       */}
-      <header className="border-border bg-surface flex h-14 flex-shrink-0 items-center gap-3 border-b px-4">
+          Height matches the sidebar header (h-14) for visual alignment.
+          Back arrow on mobile returns to the conversation list.              */}
+      <header className="border-border bg-surface flex h-14 flex-shrink-0 items-center gap-2.5 border-b px-3">
+        {/* Back button — mobile only */}
+        <button
+          onClick={() => router.push("/conversations")}
+          aria-label="Back to conversations"
+          className="text-muted hover:text-foreground hover:bg-surface-muted -ml-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md transition-colors md:hidden"
+        >
+          <ArrowLeft size={18} />
+        </button>
+
         {/* Avatar + presence dot for DM header */}
-        {activeConversation?.conversation_type === "direct" && otherMember && (
+        {activeConversation?.conversation_type === "direct" && otherMember ? (
           <div className="relative flex-shrink-0">
             <UserAvatar user={otherMember} size="sm" />
             <PresenceDot
@@ -202,14 +214,17 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
               className="ring-surface absolute -right-0.5 -bottom-0.5 ring-2"
             />
           </div>
-        )}
+        ) : activeConversation?.conversation_type === "group" ? (
+          <div className="bg-accent-muted flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full">
+            <Users size={14} className="text-accent" />
+          </div>
+        ) : null}
 
-        <div className="flex-1">
-          <p className="text-foreground text-sm font-semibold">{headerTitle}</p>
-          {headerSub && <p className="text-muted text-xs">{headerSub}</p>}
+        <div className="flex-1 min-w-0">
+          <p className="text-foreground truncate text-sm font-semibold">{headerTitle}</p>
+          {headerSub && <p className="text-muted truncate text-xs">{headerSub}</p>}
         </div>
 
-        {/* Call buttons — only shown when a conversation is loaded */}
         {activeConversation && <CallButton conversationId={activeConversation.id} />}
       </header>
 

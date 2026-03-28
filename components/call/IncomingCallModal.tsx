@@ -70,7 +70,7 @@ export function IncomingCallModal() {
 
         {/* Caller info */}
         <div className="flex flex-col items-center gap-2 text-center">
-          <UserAvatar user={{ ...caller, online: true, avatar_url: null }} size="lg" />
+          <UserAvatar user={{ ...caller, avatar_url: null }} size="lg" />
           <p className="text-foreground text-base font-semibold">{caller.display_name}</p>
           <p className="text-muted text-sm">
             Incoming {callType === "video" ? "video" : "audio"} call…
