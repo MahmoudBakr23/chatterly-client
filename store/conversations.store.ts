@@ -120,19 +120,26 @@ export const useConversationsStore = create<ConversationsState>()((set) => ({
 
   // New message broadcast: append to the end of the list (newest at bottom).
   // Also bumps the conversation to the top of the sidebar list (most-recent-first).
+  // Dedup guard: in dev, React StrictMode double-invokes effects which can produce
+  // two active WS subscriptions, both delivering the same broadcast. Skipping
+  // already-present IDs prevents duplicate-key React errors.
   addMessage: (conversationId, message) =>
-    set((state) => ({
-      messages: {
-        ...state.messages,
-        [conversationId]: [...(state.messages[conversationId] ?? []), message],
-      },
-      // Move the conversation with this id to the front of the sidebar list
-      // so the most recently active conversation is always at the top.
-      conversations: [
-        ...state.conversations.filter((c) => c.id === conversationId),
-        ...state.conversations.filter((c) => c.id !== conversationId),
-      ],
-    })),
+    set((state) => {
+      const existing = state.messages[conversationId] ?? [];
+      if (existing.some((m) => m.id === message.id)) return state;
+      return {
+        messages: {
+          ...state.messages,
+          [conversationId]: [...existing, message],
+        },
+        // Move the conversation with this id to the front of the sidebar list
+        // so the most recently active conversation is always at the top.
+        conversations: [
+          ...state.conversations.filter((c) => c.id === conversationId),
+          ...state.conversations.filter((c) => c.id !== conversationId),
+        ],
+      };
+    }),
 
   // Edited message: replace the matching message object in-place.
   updateMessage: (conversationId, message) =>
