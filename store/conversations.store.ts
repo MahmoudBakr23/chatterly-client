@@ -19,11 +19,13 @@
 //   is the single source of truth — no local state in message components.
 
 import { create } from "zustand";
-import type { Conversation, ConversationWithMembers, Message, Reaction } from "@/types";
+import type { ConversationWithMembers, Message, Reaction } from "@/types";
 
 interface ConversationsState {
   // ─── Conversation list ──────────────────────────────────────────────────────
-  conversations: Conversation[];
+  // ConversationWithMembers (not plain Conversation) so sidebar can derive
+  // otherUserId for presence dots without a second fetch per conversation.
+  conversations: ConversationWithMembers[];
   isLoadingConversations: boolean;
 
   // ─── Active conversation ────────────────────────────────────────────────────
@@ -42,7 +44,7 @@ interface ConversationsState {
   // ─── Actions ────────────────────────────────────────────────────────────────
 
   // Conversation list
-  setConversations: (conversations: Conversation[]) => void;
+  setConversations: (conversations: ConversationWithMembers[]) => void;
   setLoadingConversations: (value: boolean) => void;
 
   // Active conversation

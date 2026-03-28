@@ -116,6 +116,16 @@ export type ConversationChannelEvent =
   | { type: "reaction_added"; reaction: Reaction }
   | { type: "reaction_removed"; reaction_id: number; message_id: number };
 
+// PresenceChannel broadcasts (stream: "presence")
+// Broadcast by PresenceChannel#broadcast_status on every subscribe/unsubscribe.
+// Source: app/channels/presence_channel.rb
+// All connected clients receive this — used to update the online dot globally.
+export interface PresenceChannelEvent {
+  user_id: number;
+  username: string;
+  status: "online" | "offline";
+}
+
 // CallChannel broadcasts (stream: "call_<id>")
 // These carry WebRTC signaling data — SDP offers/answers and ICE candidates.
 // The browser's RTCPeerConnection API consumes these directly.
