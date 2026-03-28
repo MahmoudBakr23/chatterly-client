@@ -19,6 +19,7 @@ import { useEffect } from "react";
 import { useAuthStore } from "@/store/auth.store";
 import { getMe } from "@/services/auth.service";
 import { Spinner } from "@/components/ui/spinner";
+import { ConversationList } from "@/components/chat/ConversationList";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { setAuth, setHydrating, isHydrating, user } = useAuthStore();
@@ -53,7 +54,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // user data arrives — a jarring experience.
   if (isHydrating) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="bg-background flex min-h-screen items-center justify-center">
         <Spinner size="lg" className="text-muted" />
         <span className="sr-only">Loading your session…</span>
       </div>
@@ -63,25 +64,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     // Full viewport height, flex row: sidebar on left, content on right.
     // overflow-hidden on the container — each panel controls its own overflow.
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="bg-background flex h-screen overflow-hidden">
       {/* ─── Sidebar (Phase 2) ───────────────────────────────────────────────
           Placeholder for the conversation list sidebar.
           Fixed width on desktop, collapsible on mobile (Phase 6).
           Will render: search bar, conversation list, user profile footer.    */}
-      <aside className="hidden w-64 flex-shrink-0 border-r border-border bg-surface md:flex md:flex-col">
-        <div className="flex h-14 items-center border-b border-border px-4">
-          <span className="text-sm font-semibold text-foreground">Chatterly</span>
+      <aside className="border-border bg-surface hidden w-64 flex-shrink-0 border-r md:flex md:flex-col">
+        {/* Sidebar header — fixed height matches the thread header for visual alignment */}
+        <div className="border-border flex h-14 items-center border-b px-4">
+          <span className="text-foreground text-sm font-semibold">Chatterly</span>
         </div>
-        <div className="flex flex-1 items-center justify-center">
-          <p className="text-xs text-muted">Conversations — Phase 2</p>
-        </div>
+        {/* Scrollable conversation list fills remaining sidebar height */}
+        <ConversationList />
       </aside>
 
       {/* ─── Main content area ───────────────────────────────────────────────
           Takes remaining width, scrolls independently from the sidebar.      */}
-      <main className="flex flex-1 flex-col overflow-hidden">
-        {children}
-      </main>
+      <main className="flex flex-1 flex-col overflow-hidden">{children}</main>
     </div>
   );
 }

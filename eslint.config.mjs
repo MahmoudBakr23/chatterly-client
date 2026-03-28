@@ -8,6 +8,11 @@ import tsConfig from "eslint-config-next/typescript";
 const eslintConfig = [
   ...nextConfig,
   ...tsConfig,
+  // hooks/tsc.js is a plain CommonJS Node.js script used as a Claude Code
+  // PostToolUse hook — not part of the Next.js app. Exclude it from TS rules.
+  {
+    ignores: ["hooks/tsc.js"],
+  },
   {
     rules: {
       // Enforce explicit return types on exported functions — makes the service
