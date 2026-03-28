@@ -1,0 +1,177 @@
+"use client";
+
+// ─── Conversations store ──────────────────────────────────────────────────────
+// Manages all conversation and message state for the app.
+// Split from auth.store.ts to keep each domain store focused and independently
+// subscribable — components that only care about messages don't re-render on
+// auth changes (and vice versa).
+//
+// What lives here:
+//   - conversations: the sidebar list (fetched on app mount)
+//   - messages: a map of conversationId → Message[] (loaded per conversation)
+//   - activeConversationId: which thread is currently open
+//   - loading flags for conversations list and per-conversation message pages
+//   - mutation actions called by useConversationChannel when Action Cable events arrive
+//
+// Action Cable mutation flow:
+//   WebSocket event → useConversationChannel hook → store action → re-render
+//   This keeps the Action Cable logic in a hook (not a component), and the store
+//   is the single source of truth — no local state in message components.
+
+import { create } from "zustand";
+import type { Conversation, ConversationWithMembers, Message, Reaction } from "@/types";
+
+interface ConversationsState {
+  // ─── Conversation list ──────────────────────────────────────────────────────
+  conversations: Conversation[];
+  isLoadingConversations: boolean;
+
+  // ─── Active conversation ────────────────────────────────────────────────────
+  // The full conversation (with members) for the currently open thread.
+  // null = no conversation selected (empty state).
+  activeConversation: ConversationWithMembers | null;
+
+  // ─── Messages ───────────────────────────────────────────────────────────────
+  // Keyed by conversationId. Messages are stored oldest-first for rendering.
+  // The service returns newest-first; the store's setMessages action reverses.
+  messages: Record<number, Message[]>;
+  // Tracks the pagination cursor per conversation — null means all pages loaded.
+  nextCursors: Record<number, number | null>;
+  isLoadingMessages: boolean;
+
+  // ─── Actions ────────────────────────────────────────────────────────────────
+
+  // Conversation list
+  setConversations: (conversations: Conversation[]) => void;
+  setLoadingConversations: (value: boolean) => void;
+
+  // Active conversation
+  setActiveConversation: (conversation: ConversationWithMembers | null) => void;
+
+  // Messages — initial load
+  setMessages: (conversationId: number, messages: Message[], nextCursor: number | null) => void;
+  // Messages — pagination (prepend older page above existing messages)
+  prependMessages: (conversationId: number, messages: Message[], nextCursor: number | null) => void;
+  setLoadingMessages: (value: boolean) => void;
+
+  // Action Cable mutation actions
+  // Called by useConversationChannel when the backend broadcasts events.
+  addMessage: (conversationId: number, message: Message) => void;
+  updateMessage: (conversationId: number, message: Message) => void;
+  removeMessage: (conversationId: number, messageId: number) => void;
+  addReaction: (conversationId: number, reaction: Reaction) => void;
+  removeReaction: (conversationId: number, reactionId: number, messageId: number) => void;
+}
+
+export const useConversationsStore = create<ConversationsState>()((set) => ({
+  conversations: [],
+  isLoadingConversations: false,
+  activeConversation: null,
+  messages: {},
+  nextCursors: {},
+  isLoadingMessages: false,
+
+  // ─── Conversation list actions ──────────────────────────────────────────────
+
+  setConversations: (conversations) => set({ conversations }),
+
+  setLoadingConversations: (value) => set({ isLoadingConversations: value }),
+
+  // ─── Active conversation actions ────────────────────────────────────────────
+
+  setActiveConversation: (conversation) => set({ activeConversation: conversation }),
+
+  // ─── Message actions ────────────────────────────────────────────────────────
+
+  // Initial load: replace any existing messages for this conversation.
+  // The service returns messages newest-first; we reverse for oldest-first display.
+  setMessages: (conversationId, messages, nextCursor) =>
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [conversationId]: [...messages].reverse(),
+      },
+      nextCursors: {
+        ...state.nextCursors,
+        [conversationId]: nextCursor,
+      },
+    })),
+
+  // Pagination: insert older messages BEFORE the existing list (top of thread).
+  // The service returns them newest-first within the page; reverse for display order.
+  prependMessages: (conversationId, messages, nextCursor) =>
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [conversationId]: [...[...messages].reverse(), ...(state.messages[conversationId] ?? [])],
+      },
+      nextCursors: {
+        ...state.nextCursors,
+        [conversationId]: nextCursor,
+      },
+    })),
+
+  setLoadingMessages: (value) => set({ isLoadingMessages: value }),
+
+  // ─── Action Cable mutation actions ─────────────────────────────────────────
+
+  // New message broadcast: append to the end of the list (newest at bottom).
+  // Also bumps the conversation to the top of the sidebar list (most-recent-first).
+  addMessage: (conversationId, message) =>
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [conversationId]: [...(state.messages[conversationId] ?? []), message],
+      },
+      // Move the conversation with this id to the front of the sidebar list
+      // so the most recently active conversation is always at the top.
+      conversations: [
+        ...state.conversations.filter((c) => c.id === conversationId),
+        ...state.conversations.filter((c) => c.id !== conversationId),
+      ],
+    })),
+
+  // Edited message: replace the matching message object in-place.
+  updateMessage: (conversationId, message) =>
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [conversationId]: (state.messages[conversationId] ?? []).map((m) =>
+          m.id === message.id ? message : m,
+        ),
+      },
+    })),
+
+  // Deleted message: remove from the list entirely.
+  removeMessage: (conversationId, messageId) =>
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [conversationId]: (state.messages[conversationId] ?? []).filter((m) => m.id !== messageId),
+      },
+    })),
+
+  // Reaction added: append the reaction to the matching message.
+  addReaction: (conversationId, reaction) =>
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [conversationId]: (state.messages[conversationId] ?? []).map((m) =>
+          m.id === reaction.message_id ? { ...m, reactions: [...m.reactions, reaction] } : m,
+        ),
+      },
+    })),
+
+  // Reaction removed: filter out the matching reaction by id.
+  removeReaction: (conversationId, reactionId, messageId) =>
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [conversationId]: (state.messages[conversationId] ?? []).map((m) =>
+          m.id === messageId
+            ? { ...m, reactions: m.reactions.filter((r) => r.id !== reactionId) }
+            : m,
+        ),
+      },
+    })),
+}));
