@@ -18,7 +18,7 @@ export default function ConversationsPage() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
       {/* Simple empty state — communicates what to do next without clutter */}
-      <div className="rounded-full bg-surface-muted p-4">
+      <div className="bg-surface-muted rounded-full p-4">
         {/* Minimal chat icon — SVG inline keeps it bundle-free */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -38,8 +38,8 @@ export default function ConversationsPage() {
       </div>
 
       <div>
-        <p className="text-sm font-medium text-foreground">No conversation selected</p>
-        <p className="mt-0.5 text-xs text-muted">
+        <p className="text-foreground text-sm font-medium">No conversation selected</p>
+        <p className="text-muted mt-0.5 text-xs">
           Choose a conversation from the sidebar, or start a new one.
         </p>
       </div>

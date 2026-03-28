@@ -32,13 +32,8 @@ import { useAuthStore } from "@/store/auth.store";
 // Validates before any network call. Mirrors the backend's Devise validations
 // (email format, password minimum length) to give instant feedback.
 const loginSchema = z.object({
-  email: z
-    .string()
-    .min(1, "Email is required")
-    .email("Enter a valid email address"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters"),
+  email: z.string().min(1, "Email is required").email("Enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -85,10 +80,10 @@ export function LoginForm() {
   const isLoading = isSubmitting || isPending;
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-8 shadow-sm">
+    <div className="border-border bg-surface rounded-lg border p-8 shadow-sm">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-foreground">Sign in</h1>
-        <p className="mt-1 text-sm text-muted">Enter your credentials to continue.</p>
+        <h1 className="text-foreground text-xl font-semibold">Sign in</h1>
+        <p className="text-muted mt-1 text-sm">Enter your credentials to continue.</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
@@ -126,12 +121,9 @@ export function LoginForm() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-muted">
+      <p className="text-muted mt-6 text-center text-sm">
         No account?{" "}
-        <Link
-          href="/register"
-          className="font-medium text-accent hover:underline"
-        >
+        <Link href="/register" className="text-accent font-medium hover:underline">
           Create one
         </Link>
       </p>

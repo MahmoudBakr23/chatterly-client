@@ -78,11 +78,7 @@ process.stdin.on("end", () => {
   // Errors found — print them so Claude Code surfaces them in the session.
   const output = [result.stdout, result.stderr].filter(Boolean).join("\n");
   process.stdout.write(
-    "\n[tsc hook] TypeScript errors detected after editing " +
-      filePath +
-      ":\n\n" +
-      output +
-      "\n"
+    "\n[tsc hook] TypeScript errors detected after editing " + filePath + ":\n\n" + output + "\n",
   );
 
   // Exit 1 signals Claude Code that the hook found a problem.
