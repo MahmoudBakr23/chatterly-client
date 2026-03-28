@@ -41,7 +41,7 @@ export function usePresence(): void {
     // Guard: only subscribe once authenticated.
     if (!token) return;
 
-    const consumer = getCableConsumer();
+    const consumer = getCableConsumer(token);
     if (!consumer) return; // SSR guard
 
     const subscription = consumer.subscriptions.create(

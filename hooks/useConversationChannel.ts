@@ -38,7 +38,9 @@ export function useConversationChannel(conversationId: number | null): void {
     // the store is empty — the channel would be rejected server-side anyway.
     if (!conversationId || !token) return;
 
-    const consumer = getCableConsumer();
+    // Pass the token so the consumer URL includes ?token=<jwt>.
+    // connection.rb reads this param during the WebSocket handshake.
+    const consumer = getCableConsumer(token);
     if (!consumer) return; // SSR guard — consumer is null on the server
 
     const subscription = consumer.subscriptions.create(

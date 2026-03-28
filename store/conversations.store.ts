@@ -86,12 +86,13 @@ export const useConversationsStore = create<ConversationsState>()((set) => ({
   // ─── Message actions ────────────────────────────────────────────────────────
 
   // Initial load: replace any existing messages for this conversation.
-  // The service returns messages newest-first; we reverse for oldest-first display.
+  // The controller returns messages oldest-first (page.reverse in messages_controller.rb),
+  // so we store them as-is — no client-side reversal needed.
   setMessages: (conversationId, messages, nextCursor) =>
     set((state) => ({
       messages: {
         ...state.messages,
-        [conversationId]: [...messages].reverse(),
+        [conversationId]: messages,
       },
       nextCursors: {
         ...state.nextCursors,
@@ -100,12 +101,12 @@ export const useConversationsStore = create<ConversationsState>()((set) => ({
     })),
 
   // Pagination: insert older messages BEFORE the existing list (top of thread).
-  // The service returns them newest-first within the page; reverse for display order.
+  // The controller returns them oldest-first within the page; prepend as-is.
   prependMessages: (conversationId, messages, nextCursor) =>
     set((state) => ({
       messages: {
         ...state.messages,
-        [conversationId]: [...[...messages].reverse(), ...(state.messages[conversationId] ?? [])],
+        [conversationId]: [...messages, ...(state.messages[conversationId] ?? [])],
       },
       nextCursors: {
         ...state.nextCursors,

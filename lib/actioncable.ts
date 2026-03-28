@@ -12,31 +12,46 @@ import { createConsumer, type Consumer } from "@rails/actioncable";
 // Singleton pattern: we keep one consumer instance for the lifetime of the page.
 // Creating multiple consumers would open multiple WebSocket connections, wasting
 // server resources and causing duplicate message delivery.
+//
+// Auth: connection.rb reads the JWT from the ?token= query param in the WS URL.
+// We pass the token from the auth store into getCableConsumer() and embed it in
+// the URL. If the token changes (e.g., re-login), the consumer is recreated so
+// the new connection is authenticated under the correct user.
 
 let consumer: Consumer | null = null;
+let consumerToken: string | null = null;
 
 // getCableConsumer() returns the shared consumer, creating it lazily on first call.
 // Lazy creation is important because this module is imported server-side too
 // (e.g. by the store during SSR), and WebSocket APIs don't exist in Node.js.
 // The typeof window check ensures we only instantiate in the browser.
-export function getCableConsumer(): Consumer | null {
+//
+// token: the JWT from useAuthStore — appended as ?token=<jwt> so connection.rb
+// can authenticate the WebSocket handshake. Without it every WS is rejected.
+export function getCableConsumer(token?: string): Consumer | null {
   if (typeof window === "undefined") {
     // Server-side render: no WebSocket, return null.
     // Callers must guard against null before subscribing.
     return null;
   }
 
+  // If a new token is provided and differs from what the current consumer used,
+  // disconnect and recreate — otherwise the WS would be authenticated as the
+  // wrong user (or rejected entirely if the old consumer had no token).
+  if (consumer && token && token !== consumerToken) {
+    consumer.disconnect();
+    consumer = null;
+    consumerToken = null;
+  }
+
   if (!consumer) {
     // NEXT_PUBLIC_CABLE_URL is set per-environment:
     //   dev:  ws://localhost:3001/cable
     //   prod: wss://api.chatterly.app/cable
-    //
-    // The Action Cable protocol authenticates via the connection.rb file on the
-    // backend, which reads current_user from the JWT sent in the WebSocket
-    // handshake query param or cookie. We rely on the browser automatically
-    // sending the auth cookie on the WebSocket upgrade request.
-    const url = process.env.NEXT_PUBLIC_CABLE_URL ?? "ws://localhost:3001/cable";
+    const base = process.env.NEXT_PUBLIC_CABLE_URL ?? "ws://localhost:3001/cable";
+    const url = token ? `${base}?token=${encodeURIComponent(token)}` : base;
     consumer = createConsumer(url);
+    consumerToken = token ?? null;
   }
 
   return consumer;
@@ -50,5 +65,6 @@ export function disconnectCableConsumer(): void {
   if (consumer) {
     consumer.disconnect();
     consumer = null;
+    consumerToken = null;
   }
 }

@@ -40,7 +40,7 @@ export function UserAvatar({ user, size = "md" }: UserAvatarProps) {
     <div
       className={`${sizeClass} bg-surface-muted text-muted flex items-center justify-center rounded-full font-medium`}
     >
-      {user.display_name.charAt(0).toUpperCase()}
+      {(user.display_name ?? user.username ?? "?").charAt(0).toUpperCase()}
     </div>
   );
 }

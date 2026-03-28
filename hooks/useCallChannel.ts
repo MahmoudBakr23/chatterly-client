@@ -204,7 +204,7 @@ export function useCallChannel(): void {
     // Guard: only subscribe when authenticated
     if (!token || !currentUserId) return;
 
-    const consumer = getCableConsumer();
+    const consumer = getCableConsumer(token);
     if (!consumer) return; // SSR guard
 
     const subscription = consumer.subscriptions.create(

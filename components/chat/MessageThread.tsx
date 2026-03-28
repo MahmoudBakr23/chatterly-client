@@ -77,6 +77,10 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   // Track scroll container to detect if user is near the bottom.
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // True until the initial message batch has been scrolled into view.
+  // On first load we jump instantly to the bottom; subsequent new messages
+  // only auto-scroll if the user is already near the bottom.
+  const hasInitialScrolledRef = useRef(false);
 
   // ─── Initial data fetch ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -93,9 +97,11 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
       })
       .finally(() => setLoadingMessages(false));
 
-    // Cleanup: clear the active conversation when navigating away.
+    // Cleanup: clear the active conversation when navigating away,
+    // and reset the initial-scroll flag for the next conversation.
     return () => {
       setActiveConversation(null);
+      hasInitialScrolledRef.current = false;
     };
   }, [conversationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -105,11 +111,20 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
 
   useEffect(() => {
     if (!lastMessage) return;
+
+    // Initial load: jump instantly to the bottom so the user lands at the
+    // newest message, not the oldest. Skip the distance guard here.
+    if (!hasInitialScrolledRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: "instant" });
+      hasInitialScrolledRef.current = true;
+      return;
+    }
+
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // Only auto-scroll if the user is within 150px of the bottom.
-    // This prevents hijacking scroll position when loading history.
+    // Subsequent messages: only auto-scroll if the user is within 150px of the
+    // bottom. This prevents hijacking scroll position when reading history.
     const distanceFromBottom =
       container.scrollHeight - container.scrollTop - container.clientHeight;
 
