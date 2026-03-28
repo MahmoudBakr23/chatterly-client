@@ -19,6 +19,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { toast } from "sonner";
 import { useConversationsStore } from "@/store/conversations.store";
 import { useAuthStore } from "@/store/auth.store";
 import { getConversations } from "@/services/conversations.service";
@@ -41,7 +42,9 @@ export function ConversationList() {
     setLoadingConversations(true);
     getConversations()
       .then((data) => setConversations(data))
-      .catch(() => {})
+      .catch(() => {
+        toast.error("Failed to load conversations. Please refresh.");
+      })
       .finally(() => setLoadingConversations(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

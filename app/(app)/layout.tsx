@@ -16,6 +16,7 @@
 //   └──────────────────────────────────────────────────────┘
 
 import { useEffect } from "react";
+import { Toaster } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
 import { getMe } from "@/services/auth.service";
 import { usePresence } from "@/hooks/usePresence";
@@ -102,6 +103,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           ActiveCallOverlay: z-40, renders when activeCallSessionId is set        */}
       <IncomingCallModal />
       <ActiveCallOverlay />
+
+      {/* ─── Toast notifications ─────────────────────────────────────────────
+          Sonner Toaster — renders toasts triggered by toast.error() / toast.success()
+          throughout the app. Positioned bottom-right, auto-dismisses after 4s.
+          richColors maps "error" → red and "success" → green using sonner's defaults. */}
+      <Toaster position="bottom-right" richColors closeButton />
     </div>
   );
 }
