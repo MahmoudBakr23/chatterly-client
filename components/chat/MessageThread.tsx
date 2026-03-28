@@ -32,6 +32,7 @@ import { MessageInput } from "@/components/chat/MessageInput";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { PresenceDot } from "@/components/ui/PresenceDot";
 import { Spinner } from "@/components/ui/spinner";
+import { CallButton } from "@/components/call/CallButton";
 
 interface MessageThreadProps {
   conversationId: number;
@@ -168,10 +169,13 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
           </div>
         )}
 
-        <div>
+        <div className="flex-1">
           <p className="text-foreground text-sm font-semibold">{headerTitle}</p>
           {headerSub && <p className="text-muted text-xs">{headerSub}</p>}
         </div>
+
+        {/* Call buttons — only shown when a conversation is loaded */}
+        {activeConversation && <CallButton conversationId={activeConversation.id} />}
       </header>
 
       {/* ── Message list ───────────────────────────────────────────────────────

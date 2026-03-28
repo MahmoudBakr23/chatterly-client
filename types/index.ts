@@ -126,18 +126,51 @@ export interface PresenceChannelEvent {
   status: "online" | "offline";
 }
 
-// CallChannel broadcasts (stream: "call_<id>")
-// These carry WebRTC signaling data — SDP offers/answers and ICE candidates.
-// The browser's RTCPeerConnection API consumes these directly.
+// CallChannel broadcasts (stream: "calls_user_<id>")
+// Each user gets their own personal stream — signals arrive only for you.
 // Source: app/channels/call_channel.rb
+//
+// WebRTC signal payloads (passed opaquely through send_signal):
+//   - SDP offer/answer: RTCSessionDescriptionInit { type: "offer"|"answer", sdp: string }
+//   - ICE candidate:   { type: "ice_candidate", candidate: RTCIceCandidateInit }
+export type WebRTCSignal =
+  | RTCSessionDescriptionInit
+  | { type: "ice_candidate"; candidate: RTCIceCandidateInit };
+
 export type CallChannelEvent =
-  | { type: "offer"; sdp: RTCSessionDescriptionInit; from: number }
-  | { type: "answer"; sdp: RTCSessionDescriptionInit; from: number }
-  | { type: "ice_candidate"; candidate: RTCIceCandidateInit; from: number }
-  | { type: "incoming_call"; call: CallSession }
-  | { type: "call_accepted"; call_session_id: number; by: number }
-  | { type: "call_declined"; call_session_id: number; by: number }
-  | { type: "call_ended"; call_session_id: number };
+  | {
+      type: "incoming_call";
+      call_session_id: number;
+      // Caller identity sent inline — avoids a round-trip to /users/:id
+      caller: { id: number; username: string; display_name: string };
+      call_type: "audio" | "video";
+      conversation_id: number;
+    }
+  | {
+      type: "call_accepted";
+      call_session_id: number;
+      accepted_by: { id: number; username: string };
+    }
+  | {
+      type: "call_declined";
+      call_session_id: number;
+      declined_by: { id: number; username: string };
+    }
+  // Generic WebRTC signal forwarded by send_signal — discriminate on signal.type
+  | {
+      type: "signal";
+      call_session_id: number;
+      from_user_id: number;
+      signal: WebRTCSignal;
+    }
+  | { type: "call_ended"; call_session_id: number }
+  | { type: "participant_muted"; call_session_id: number; user_id: number; muted: boolean }
+  | {
+      type: "participant_camera_toggled";
+      call_session_id: number;
+      user_id: number;
+      camera_off: boolean;
+    };
 
 // ─── API response wrappers ────────────────────────────────────────────────────
 // Rails API controllers render { data: <blueprint_output> } for success responses.

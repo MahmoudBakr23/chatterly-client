@@ -19,8 +19,11 @@ import { useEffect } from "react";
 import { useAuthStore } from "@/store/auth.store";
 import { getMe } from "@/services/auth.service";
 import { usePresence } from "@/hooks/usePresence";
+import { useCallChannel } from "@/hooks/useCallChannel";
 import { Spinner } from "@/components/ui/spinner";
 import { ConversationList } from "@/components/chat/ConversationList";
+import { IncomingCallModal } from "@/components/call/IncomingCallModal";
+import { ActiveCallOverlay } from "@/components/call/ActiveCallOverlay";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { setAuth, setHydrating, isHydrating, user } = useAuthStore();
@@ -28,6 +31,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Mount the PresenceChannel subscription for the entire authenticated session.
   // One subscription per tab — broadcasts online/offline status globally.
   usePresence();
+
+  // Mount the CallChannel subscription for the entire authenticated session.
+  // Handles incoming call notifications, WebRTC signaling, and call control events.
+  // Must be at layout level — not per-conversation — so calls can arrive regardless
+  // of which page the user is on.
+  useCallChannel();
 
   // ─── Auth hydration on mount ────────────────────────────────────────────────
   // On hard refresh, the Zustand store is empty. We call /api/me which reads the
@@ -86,6 +95,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* ─── Main content area ───────────────────────────────────────────────
           Takes remaining width, scrolls independently from the sidebar.      */}
       <main className="flex flex-1 flex-col overflow-hidden">{children}</main>
+
+      {/* ─── Call overlays ───────────────────────────────────────────────────
+          Mounted once at layout level so they render above all page content.
+          IncomingCallModal: z-50, renders when incomingCall is set in call store
+          ActiveCallOverlay: z-40, renders when activeCallSessionId is set        */}
+      <IncomingCallModal />
+      <ActiveCallOverlay />
     </div>
   );
 }
