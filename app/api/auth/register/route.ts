@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
   // Devise Registrations expects: { user: { email, password, username, display_name } }
   // The field names must match the permitted params in the Devise registration controller.
-  const railsRes = await fetch(`${RAILS_API}/auth/sign_up`, {
+  const railsRes = await fetch(`${RAILS_API}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ user: { email, password, username, display_name } }),
@@ -37,7 +37,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const user = await railsRes.json();
+  // Registrations controller returns { message: "...", user: { ...fields } } — extract user.
+  const body = await railsRes.json();
+  const user = body.user ?? body.data ?? body;
 
   const cookieStore = await cookies();
   cookieStore.set("auth_token", token, {
@@ -48,5 +50,5 @@ export async function POST(request: NextRequest) {
     path: "/",
   });
 
-  return NextResponse.json({ user: user.data ?? user, token });
+  return NextResponse.json({ user, token });
 }

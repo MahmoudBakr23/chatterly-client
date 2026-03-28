@@ -23,7 +23,7 @@ export async function DELETE() {
     // blip), we still clear the cookie. The token will expire naturally in 24h.
     // In a higher-security context you'd want to retry or queue this.
     try {
-      await fetch(`${RAILS_API}/auth/sign_out`, {
+      await fetch(`${RAILS_API}/auth/logout`, {
         method: "DELETE",
         headers: {
           // Rails' authenticate_user! reads this header to identify and denylist the token.

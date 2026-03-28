@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
   // Forward to Devise Sessions endpoint.
   // Devise expects: { user: { email, password } }
-  const railsRes = await fetch(`${RAILS_API}/auth/sign_in`, {
+  const railsRes = await fetch(`${RAILS_API}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ user: { email, password } }),
@@ -55,7 +55,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const user = await railsRes.json();
+  // Sessions controller returns { user: { ...fields } } — extract the nested user object.
+  // Fallback chain handles any future shape changes gracefully.
+  const body = await railsRes.json();
+  const user = body.user ?? body.data ?? body;
 
   // Set the httpOnly cookie. The browser will include this cookie on every subsequent
   // request to our Next.js server (including WebSocket upgrade for Action Cable).
@@ -71,5 +74,5 @@ export async function POST(request: NextRequest) {
   // Return user + token in the body. The client stores the token in Zustand memory
   // for attaching to direct API calls via Axios. On hard refresh, the token is lost
   // from memory but the cookie persists — the (app)/layout.tsx rehydrates on mount.
-  return NextResponse.json({ user: user.data ?? user, token });
+  return NextResponse.json({ user, token });
 }
