@@ -17,9 +17,18 @@ import { createConsumer, type Consumer } from "@rails/actioncable";
 // We pass the token from the auth store into getCableConsumer() and embed it in
 // the URL. If the token changes (e.g., re-login), the consumer is recreated so
 // the new connection is authenticated under the correct user.
+//
+// HMR survival (dev only): Next.js Fast Refresh re-evaluates modules, which
+// would reset module-level variables to null and orphan the live WebSocket.
+// We persist the consumer reference on `window` so it survives module reloads.
+// React StrictMode double-invokes effects; without this the singleton is reset
+// between the cleanup and re-run, leaving the component with no subscription.
 
-let consumer: Consumer | null = null;
-let consumerToken: string | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const win = typeof window !== "undefined" ? (window as any) : null;
+
+let consumer: Consumer | null = win?.__cableConsumer ?? null;
+let consumerToken: string | null = win?.__cableConsumerToken ?? null;
 
 // getCableConsumer() returns the shared consumer, creating it lazily on first call.
 // Lazy creation is important because this module is imported server-side too
@@ -52,6 +61,11 @@ export function getCableConsumer(token?: string): Consumer | null {
     const url = token ? `${base}?token=${encodeURIComponent(token)}` : base;
     consumer = createConsumer(url);
     consumerToken = token ?? null;
+    // Persist on window so Fast Refresh module reloads pick up the live instance.
+    if (win) {
+      win.__cableConsumer = consumer;
+      win.__cableConsumerToken = consumerToken;
+    }
   }
 
   return consumer;
@@ -66,5 +80,9 @@ export function disconnectCableConsumer(): void {
     consumer.disconnect();
     consumer = null;
     consumerToken = null;
+    if (win) {
+      win.__cableConsumer = null;
+      win.__cableConsumerToken = null;
+    }
   }
 }
