@@ -5,7 +5,7 @@
 // Backend connection:
 //   Rails controller: app/controllers/api/v1/conversations_controller.rb
 //   Blueprint:        app/blueprints/conversation_blueprint.rb
-//   Routes:           GET  /api/v1/conversations          → index (default view)
+//   Routes:           GET  /api/v1/conversations          → index (:with_members view)
 //                     GET  /api/v1/conversations/:id      → show (:with_members view)
 //                     POST /api/v1/conversations          → create
 //
@@ -15,14 +15,16 @@
 //   added here (?cursor=<id>&limit=20). Not needed until Phase 6.
 
 import api from "@/lib/axios";
-import type { ApiSuccess, Conversation, ConversationWithMembers } from "@/types";
+import type { ApiSuccess, ConversationWithMembers } from "@/types";
 
 // ─── getConversations() ───────────────────────────────────────────────────────
 // Fetches the list of conversations the current user belongs to.
-// Returns the "default" blueprint view — no members array, just scalar fields.
-// Used to populate the sidebar conversation list.
-export async function getConversations(): Promise<Conversation[]> {
-  const response = await api.get<ApiSuccess<Conversation[]>>("/api/v1/conversations");
+// Returns the ":with_members" blueprint view so the sidebar can render presence
+// dots for DMs without a second request per conversation.
+// Backend: ConversationsController#index renders ConversationBlueprint
+// with view: :with_members.
+export async function getConversations(): Promise<ConversationWithMembers[]> {
+  const response = await api.get<ApiSuccess<ConversationWithMembers[]>>("/api/v1/conversations");
   return response.data.data;
 }
 

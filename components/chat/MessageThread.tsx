@@ -23,12 +23,14 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useConversationsStore } from "@/store/conversations.store";
 import { useAuthStore } from "@/store/auth.store";
+import { usePresenceStore } from "@/store/presence.store";
 import { getConversation } from "@/services/conversations.service";
 import { getMessages } from "@/services/messages.service";
 import { useConversationChannel } from "@/hooks/useConversationChannel";
 import { MessageItem } from "@/components/chat/MessageItem";
 import { MessageInput } from "@/components/chat/MessageInput";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { PresenceDot } from "@/components/ui/PresenceDot";
 import { Spinner } from "@/components/ui/spinner";
 
 interface MessageThreadProps {
@@ -37,6 +39,7 @@ interface MessageThreadProps {
 
 export function MessageThread({ conversationId }: MessageThreadProps) {
   const currentUser = useAuthStore((state) => state.user);
+  const isOnline = usePresenceStore((state) => state.isOnline);
   const {
     activeConversation,
     messages,
@@ -132,13 +135,16 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
   let headerTitle = activeConversation?.name ?? "Loading…";
   let headerSub: string | null = null;
 
+  // otherMember: the other person in a DM — used for avatar + presence status
+  let otherMember = activeConversation?.members.find((m) => m.id !== currentUser?.id) ?? null;
+
   if (activeConversation) {
     if (activeConversation.conversation_type === "direct" && currentUser) {
-      // For DMs, show the other person's display_name in the header
-      const other = activeConversation.members.find((m) => m.id !== currentUser.id);
-      headerTitle = other?.display_name ?? "Direct Message";
-      headerSub = other?.online ? "Online" : null;
+      headerTitle = otherMember?.display_name ?? "Direct Message";
+      // Read presence live from the store — updates in real-time via PresenceChannel
+      headerSub = otherMember && isOnline(otherMember.id) ? "Online" : null;
     } else if (activeConversation.conversation_type === "group") {
+      otherMember = null; // groups don't have a single "other" member
       headerTitle = activeConversation.name ?? "Group Chat";
       headerSub = `${activeConversation.member_count} members`;
     }
@@ -150,13 +156,17 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
           Shows conversation name and member count (or online status for DMs).
           Height matches the sidebar header (h-14) for visual alignment.       */}
       <header className="border-border bg-surface flex h-14 flex-shrink-0 items-center gap-3 border-b px-4">
-        {/* Avatar cluster: for DMs show the other user's avatar */}
-        {activeConversation?.conversation_type === "direct" &&
-          currentUser &&
-          (() => {
-            const other = activeConversation.members.find((m) => m.id !== currentUser.id);
-            return other ? <UserAvatar user={other} size="sm" /> : null;
-          })()}
+        {/* Avatar + presence dot for DM header */}
+        {activeConversation?.conversation_type === "direct" && otherMember && (
+          <div className="relative flex-shrink-0">
+            <UserAvatar user={otherMember} size="sm" />
+            <PresenceDot
+              userId={otherMember.id}
+              size="md"
+              className="ring-surface absolute -right-0.5 -bottom-0.5 ring-2"
+            />
+          </div>
+        )}
 
         <div>
           <p className="text-foreground text-sm font-semibold">{headerTitle}</p>

@@ -18,11 +18,16 @@
 import { useEffect } from "react";
 import { useAuthStore } from "@/store/auth.store";
 import { getMe } from "@/services/auth.service";
+import { usePresence } from "@/hooks/usePresence";
 import { Spinner } from "@/components/ui/spinner";
 import { ConversationList } from "@/components/chat/ConversationList";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { setAuth, setHydrating, isHydrating, user } = useAuthStore();
+
+  // Mount the PresenceChannel subscription for the entire authenticated session.
+  // One subscription per tab — broadcasts online/offline status globally.
+  usePresence();
 
   // ─── Auth hydration on mount ────────────────────────────────────────────────
   // On hard refresh, the Zustand store is empty. We call /api/me which reads the
