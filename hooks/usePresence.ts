@@ -57,10 +57,12 @@ export function usePresence(): void {
             return;
           }
           // Normal status broadcast: single user went online or offline.
-          if (data.status === "online") {
-            setOnline(data.user_id);
-          } else {
-            setOffline(data.user_id);
+          if ("status" in data) {
+            if (data.status === "online") {
+              setOnline(data.user_id);
+            } else {
+              setOffline(data.user_id);
+            }
           }
         },
       },
