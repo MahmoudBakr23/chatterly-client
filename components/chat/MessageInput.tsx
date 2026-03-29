@@ -24,6 +24,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { sendMessage } from "@/services/messages.service";
+import { useConversationsStore } from "@/store/conversations.store";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
@@ -39,12 +40,23 @@ type FormValues = z.infer<typeof schema>;
 
 interface MessageInputProps {
   conversationId: number;
+  // Called (debounced) on each keystroke to signal the user is typing.
+  // Called once when user starts typing (first keystroke after idle/stop).
+  onTyping?: () => void;
+  // Called when user stops: submits message, clears input, or blurs the field.
+  onStopTyping?: () => void;
 }
 
-export function MessageInput({ conversationId }: MessageInputProps) {
+export function MessageInput({ conversationId, onTyping, onStopTyping }: MessageInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pickerContainerRef = useRef<HTMLDivElement>(null);
   const [showPicker, setShowPicker] = useState(false);
+  const addMessage = useConversationsStore((state) => state.addMessage);
+
+  // Tracks whether we've sent a typing_start that hasn't been closed with typing_stop.
+  // Ensures we fire typing_start exactly once per "typing session", and typing_stop
+  // exactly once when that session ends — mirroring Messenger/Instagram's approach.
+  const isTypingRef = useRef(false);
 
   const {
     register,
@@ -86,11 +98,39 @@ export function MessageInput({ conversationId }: MessageInputProps) {
     if (!el) return;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+
+    const hasContent = el.value.trim().length > 0;
+
+    if (hasContent && !isTypingRef.current) {
+      // Transition: idle → typing. Fire typing_start exactly once.
+      isTypingRef.current = true;
+      onTyping?.();
+    } else if (!hasContent && isTypingRef.current) {
+      // User deleted everything — treat as stop.
+      isTypingRef.current = false;
+      onStopTyping?.();
+    }
   }
 
   async function onSubmit(values: FormValues) {
+    // Message sent — stop the typing indicator before the network call so the
+    // receiver sees it clear at the same moment the message appears.
+    if (isTypingRef.current) {
+      isTypingRef.current = false;
+      onStopTyping?.();
+    }
+
     try {
-      await sendMessage(conversationId, values.content.trim());
+      const message = await sendMessage(conversationId, values.content.trim());
+      // Optimistically add the sender's own message to the store immediately
+      // from the REST response. The WebSocket broadcast will also arrive and
+      // the dedup guard (m.id === message.id) in addMessage silently skips it.
+      //
+      // Why not rely solely on the broadcast? In development, React StrictMode
+      // runs effects twice — the subscription is briefly torn down and re-created.
+      // If the broadcast fires in that cleanup window, the sender's subscription
+      // is gone and the message silently disappears until a page refresh.
+      addMessage(conversationId, message);
       reset();
       setShowPicker(false);
     } catch {
@@ -184,6 +224,13 @@ export function MessageInput({ conversationId }: MessageInputProps) {
           }}
           onInput={handleInput}
           onKeyDown={handleKeyDown}
+          onBlur={() => {
+            // User navigated away from the input — stop typing indicator immediately.
+            if (isTypingRef.current) {
+              isTypingRef.current = false;
+              onStopTyping?.();
+            }
+          }}
           placeholder="Message…"
           rows={1}
           disabled={isSubmitting}

@@ -30,6 +30,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { getMe, logout as logoutService } from "@/services/auth.service";
 import { usePresence } from "@/hooks/usePresence";
 import { useCallChannel } from "@/hooks/useCallChannel";
+import { useUserChannel } from "@/hooks/useUserChannel";
 import { Spinner } from "@/components/ui/spinner";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { ConversationList } from "@/components/chat/ConversationList";
@@ -50,6 +51,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   usePresence();
   useCallChannel();
+  useUserChannel();
 
   // ─── Auth hydration ─────────────────────────────────────────────────────────
   useEffect(() => {

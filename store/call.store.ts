@@ -101,8 +101,11 @@ export const useCallStore = create<CallState>()((set) => ({
 
   // clearCall resets everything back to idle — always stop MediaStream tracks
   // before calling this so the browser releases camera/microphone hardware.
+  // incomingCall is also cleared here so that if the caller cancels while the
+  // recipient is on the ringing modal, the call_ended event dismisses it.
   clearCall: () =>
     set({
+      incomingCall: null,
       activeCallSessionId: null,
       activeCallConversationId: null,
       callType: null,

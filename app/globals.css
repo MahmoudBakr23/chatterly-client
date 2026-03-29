@@ -102,6 +102,14 @@ body {
   overflow-x: hidden;
 }
 
+/* ─── Typing indicator dots ──────────────────────────────────────────────────
+   Three dots that bounce in sequence while someone is typing.
+   Each dot is offset by 0.2s via its animation-delay (set inline in JSX).   */
+@keyframes typing-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
 /* ─── Message appear animation ───────────────────────────────────────────────
    Applied to every MessageItem so new real-time messages slide in smoothly.  */
 @keyframes message-in {

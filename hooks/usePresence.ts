@@ -47,9 +47,16 @@ export function usePresence(): void {
     const subscription = consumer.subscriptions.create(
       { channel: "PresenceChannel" },
       {
-        // received() fires for every broadcast on the "presence" stream.
-        // Update the store based on the arriving status.
+        // received() fires for every event on the "presence" stream (or direct transmit).
         received(data: PresenceChannelEvent) {
+          // initial_presence: backend transmit()s the current Redis roster directly
+          // to this new subscriber so the store is populated immediately on page load,
+          // without waiting up to 30s for other users' next ping broadcast.
+          if ("type" in data && data.type === "initial_presence") {
+            data.online_user_ids.forEach((id) => setOnline(id));
+            return;
+          }
+          // Normal status broadcast: single user went online or offline.
           if (data.status === "online") {
             setOnline(data.user_id);
           } else {

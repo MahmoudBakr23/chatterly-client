@@ -67,6 +67,7 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
     messages,
     nextCursors,
     isLoadingMessages,
+    typingUsers,
     setActiveConversation,
     setMessages,
     prependMessages,
@@ -74,7 +75,8 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
   } = useConversationsStore();
 
   // Subscribe to live updates for this conversation.
-  useConversationChannel(conversationId);
+  // sendTyping/sendStopTyping are passed to MessageInput for logical start/stop events.
+  const { sendTyping, sendStopTyping } = useConversationChannel(conversationId);
 
   // Sentinel div at the bottom — used for auto-scroll.
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -207,11 +209,11 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
         {/* Avatar + presence dot for DM header */}
         {activeConversation?.conversation_type === "direct" && otherMember ? (
           <div className="relative flex-shrink-0">
-            <UserAvatar user={otherMember} size="sm" />
+            <UserAvatar user={otherMember} size="md" />
             <PresenceDot
               userId={otherMember.id}
-              size="md"
-              className="ring-surface absolute -right-0.5 -bottom-0.5 ring-2"
+              size="sm"
+              className="absolute -right-0.5 -bottom-0.5"
             />
           </div>
         ) : activeConversation?.conversation_type === "group" ? (
@@ -273,8 +275,56 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
         <div ref={bottomRef} aria-hidden="true" />
       </div>
 
+      {/* ── Typing indicator ───────────────────────────────────────────────────
+          Shows "Alice is typing…" below the message list.
+          typingUsers[conversationId] is a Record<userId, displayName>.
+          Populated on typing_start, cleared immediately on typing_stop.       */}
+      <TypingIndicator typingUsers={typingUsers[conversationId] ?? {}} />
+
       {/* ── Message input ──────────────────────────────────────────────────────*/}
-      <MessageInput conversationId={conversationId} />
+      <MessageInput conversationId={conversationId} onTyping={sendTyping} onStopTyping={sendStopTyping} />
+    </div>
+  );
+}
+
+// ─── TypingIndicator ──────────────────────────────────────────────────────────
+// Renders "Alice is typing…" (or "Alice and Bob are typing…") between the
+// message list and the input bar.
+//
+// typingUsers is a Record<userId, displayName> for users currently typing.
+// Populated on typing_start, cleared immediately on typing_stop (10s safety fallback).
+// Renders nothing when the map is empty.
+
+interface TypingIndicatorProps {
+  typingUsers: Record<number, string>;
+}
+
+function TypingIndicator({ typingUsers }: TypingIndicatorProps) {
+  const names = Object.values(typingUsers);
+  if (names.length === 0) return null;
+
+  let label: string;
+  if (names.length === 1) {
+    label = `${names[0]} is typing…`;
+  } else if (names.length === 2) {
+    label = `${names[0]} and ${names[1]} are typing…`;
+  } else {
+    label = "Several people are typing…";
+  }
+
+  return (
+    <div className="flex items-center gap-2 px-4 py-1">
+      {/* Animated dot trio — standard typing indicator pattern */}
+      <span className="flex gap-0.5" aria-hidden="true">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="bg-muted inline-block h-1.5 w-1.5 rounded-full"
+            style={{ animation: `typing-dot 1.2s ${i * 0.2}s ease-in-out infinite` }}
+          />
+        ))}
+      </span>
+      <p className="text-muted text-xs">{label}</p>
     </div>
   );
 }

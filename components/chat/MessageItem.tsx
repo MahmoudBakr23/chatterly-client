@@ -9,18 +9,21 @@
 //   - Grouped messages (same sender <5 min apart): suppress avatar + name header,
 //     tighten vertical spacing for a compact back-and-forth look
 //   - Bubbles use rounded-xl (20px) for a modern chat-app aesthetic
+//   - Call messages: centered pill row (Messenger-style), no bubble, no alignment
 //
 // Backend connection:
 //   Receives Message (MessageBlueprint default view):
 //     user → UserBlueprint :public (no email)
 //     reactions → ReactionBlueprint[] (bundled inline, no N+1)
+//     call_session → CallSessionSummary (non-null only when message_type === "call")
 //
 // Scalability: groupReactions() runs per render — acceptable for <20 reactions.
 
+import { Phone, Video } from "lucide-react";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { cn } from "@/lib/utils";
 import { formatMessageTime } from "@/lib/utils";
-import type { Message } from "@/types";
+import type { Message, CallSessionSummary } from "@/types";
 
 interface MessageItemProps {
   message: Message;
@@ -37,6 +40,19 @@ function groupReactions(reactions: Message["reactions"]): { emoji: string; count
 }
 
 export function MessageItem({ message, isOwn, isGrouped = false }: MessageItemProps) {
+  // Call messages render as a centered system row — no bubble, no alignment side.
+  // This mirrors the Messenger/Instagram call log style.
+  if (message.message_type === "call" && message.call_session) {
+    return (
+      <CallLogRow
+        callSession={message.call_session}
+        senderName={message.user.display_name || message.user.username}
+        isOwn={isOwn}
+        createdAt={message.created_at}
+      />
+    );
+  }
+
   const grouped = groupReactions(message.reactions);
   const timeLabel = formatMessageTime(message.created_at);
 
@@ -105,4 +121,69 @@ export function MessageItem({ message, isOwn, isGrouped = false }: MessageItemPr
       </div>
     </div>
   );
+}
+
+// ─── CallLogRow ───────────────────────────────────────────────────────────────
+// Messenger-style centered call log — replaces the normal bubble for call messages.
+//
+// Layout: a centered pill showing call type icon + text summary + timestamp,
+// with a small direction label below ("You called" / "[Name] called").
+//
+// Status display logic:
+//   ended + duration  → "Audio call · 2 min 30 sec"
+//   ended (no answer) → "Audio call"
+//   declined          → "Audio call · Declined"
+//   missed            → "Audio call · No answer"
+//
+// Backend: call_session comes from MessageBlueprint's call_session field.
+// initiator_id is not needed here — isOwn (derived from message.user.id) already
+// tells us who called.
+
+interface CallLogRowProps {
+  callSession: CallSessionSummary;
+  senderName: string;
+  isOwn: boolean;
+  createdAt: string;
+}
+
+function CallLogRow({ callSession, senderName, isOwn, createdAt }: CallLogRowProps) {
+  const isVideo = callSession.call_type === "video";
+  const Icon = isVideo ? Video : Phone;
+  const typeLabel = isVideo ? "Video call" : "Audio call";
+
+  let statusLabel = "";
+  if (callSession.status === "declined") statusLabel = "Declined";
+  else if (callSession.status === "missed") statusLabel = "No answer";
+  else if (callSession.status === "ended" && callSession.duration != null) {
+    statusLabel = formatDuration(callSession.duration);
+  }
+
+  const summaryText = statusLabel ? `${typeLabel} · ${statusLabel}` : typeLabel;
+  const directionLabel = isOwn ? "You called" : `${senderName} called`;
+  const timeLabel = formatMessageTime(createdAt);
+
+  return (
+    <div className="flex flex-col items-center gap-0.5 py-2">
+      {/* Pill row: icon + summary + timestamp */}
+      <div className="text-muted flex items-center gap-1.5 rounded-full bg-transparent px-3 py-1 text-xs">
+        <Icon size={12} className="flex-shrink-0" />
+        <span>{summaryText}</span>
+        <span className="opacity-50">·</span>
+        <span className="opacity-50">{timeLabel}</span>
+      </div>
+      {/* Direction label */}
+      <p className="text-muted text-xs opacity-50">{directionLabel}</p>
+    </div>
+  );
+}
+
+// ─── formatDuration ───────────────────────────────────────────────────────────
+// Converts seconds to a human-readable string for call duration display.
+// e.g. 90 → "1 min 30 sec", 120 → "2 min", 45 → "45 sec"
+
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds} sec`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s > 0 ? `${m} min ${s} sec` : `${m} min`;
 }

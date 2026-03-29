@@ -75,7 +75,7 @@ export function ConversationItem({ conversation, isActive, currentUserId }: Conv
           <PresenceDot
             userId={otherMember.id}
             size="sm"
-            className="ring-sidebar absolute -right-0.5 -bottom-0.5 ring-2"
+            className="absolute -right-0.5 -bottom-0.5"
           />
         )}
       </div>
