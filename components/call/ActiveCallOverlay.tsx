@@ -175,12 +175,22 @@ function LocalVideo({ stream, isCameraOff }: LocalVideoProps) {
     }
   }, [stream]);
 
+  // Always render <video> — never unmount it on camera toggle.
+  // If we conditionally rendered <video> vs a placeholder, toggling camera off
+  // then on would remount a fresh <video> element, but useEffect([stream]) wouldn't
+  // re-run (stream hasn't changed), so srcObject would never be set and the camera
+  // would show nothing. CSS hide keeps the element mounted with srcObject intact.
   return (
     <div className="absolute right-4 bottom-28 h-32 w-24 overflow-hidden rounded-xl border border-white/10 bg-gray-900 shadow-lg sm:h-40 sm:w-28">
-      {!isCameraOff ? (
-        // muted — REQUIRED for local preview (prevents echo)
-        <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
-      ) : (
+      {/* muted — REQUIRED for local preview (prevents echo) */}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className={cn("h-full w-full object-cover", isCameraOff && "hidden")}
+      />
+      {isCameraOff && (
         <div className="flex h-full w-full items-center justify-center">
           <VideoOff size={20} className="text-white/40" />
         </div>

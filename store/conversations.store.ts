@@ -67,6 +67,12 @@ interface ConversationsState {
   removeMessage: (conversationId: number, messageId: number) => void;
   addReaction: (conversationId: number, reaction: Reaction) => void;
   removeReaction: (conversationId: number, reactionId: number, messageId: number) => void;
+
+  // Typing indicators — keyed by conversationId → { userId: displayName }.
+  // Set by useConversationChannel on typing_indicator events; auto-cleared after 3s.
+  typingUsers: Record<number, Record<number, string>>;
+  setTyping: (conversationId: number, userId: number, displayName: string) => void;
+  clearTyping: (conversationId: number, userId: number) => void;
 }
 
 export const useConversationsStore = create<ConversationsState>()((set) => ({
@@ -76,6 +82,7 @@ export const useConversationsStore = create<ConversationsState>()((set) => ({
   messages: {},
   nextCursors: {},
   isLoadingMessages: false,
+  typingUsers: {},
 
   // ─── Conversation list actions ──────────────────────────────────────────────
 
@@ -198,4 +205,23 @@ export const useConversationsStore = create<ConversationsState>()((set) => ({
         ),
       },
     })),
+
+  // Typing indicators — set/clear by useConversationChannel on typing_indicator events.
+  setTyping: (conversationId, userId, displayName) =>
+    set((state) => ({
+      typingUsers: {
+        ...state.typingUsers,
+        [conversationId]: {
+          ...(state.typingUsers[conversationId] ?? {}),
+          [userId]: displayName,
+        },
+      },
+    })),
+
+  clearTyping: (conversationId, userId) =>
+    set((state) => {
+      const conv = { ...(state.typingUsers[conversationId] ?? {}) };
+      delete conv[userId];
+      return { typingUsers: { ...state.typingUsers, [conversationId]: conv } };
+    }),
 }));

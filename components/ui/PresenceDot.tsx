@@ -26,16 +26,20 @@ export function PresenceDot({ userId, size = "sm", className }: PresenceDotProps
   // Subscribe narrowly: re-render only when this user's key appears or disappears
   const online = usePresenceStore((state) => userId in state.onlineUserIds);
 
+  // Only render when the user is online — no dot at all for offline users.
+  // bg-success via Tailwind class is unreliable in Tailwind v4 without @config
+  // in globals.css; use the CSS variable directly via style= instead.
+  if (!online) return null;
+
   return (
     <span
-      aria-label={online ? "Online" : "Offline"}
+      aria-label="Online"
       className={cn(
         "inline-block flex-shrink-0 rounded-full",
-        // Green when online, grey when offline
-        online ? "bg-success" : "bg-muted",
-        size === "sm" ? "h-2 w-2" : "h-2.5 w-2.5",
+        size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5",
         className,
       )}
+      style={{ backgroundColor: "#22c55e" /* green-500 — medium green */ }}
     />
   );
 }

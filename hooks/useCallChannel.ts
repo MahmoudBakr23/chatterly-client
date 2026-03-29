@@ -62,6 +62,14 @@ let _localStream: MediaStream | null = null;
 // Set on call_accepted (initiator) or on first signal (recipient).
 let _remoteUserId: number | null = null;
 
+// ICE candidate buffer — collects trickle ICE candidates that arrive before
+// setRemoteDescription() completes. Each signal event launches a separate async
+// IIFE, so candidates can be processed concurrently with the offer/answer before
+// the remote description is set. addIceCandidate() throws if called before
+// setRemoteDescription(), dropping the candidate silently. We buffer and flush
+// after the remote description is confirmed set.
+let _pendingCandidates: RTCIceCandidateInit[] = [];
+
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
 // createPeerConnection — builds an RTCPeerConnection wired to the call store.
@@ -110,6 +118,7 @@ function cleanupCall(): void {
   _localStream = null;
 
   _remoteUserId = null;
+  _pendingCandidates = [];
   useCallStore.getState().clearCall();
 }
 
@@ -289,6 +298,20 @@ export function useCallChannel(): void {
                       }
                     }
                     await _peerConnection.setRemoteDescription(signal as RTCSessionDescriptionInit);
+
+                    // Flush ICE candidates that arrived before remote description was set.
+                    // Each signal fires a separate async IIFE, so candidates can race
+                    // ahead of the offer's setRemoteDescription — they're buffered above
+                    // and applied here once we know the remote description is ready.
+                    for (const c of _pendingCandidates) {
+                      try {
+                        await _peerConnection.addIceCandidate(new RTCIceCandidate(c));
+                      } catch {
+                        // Individual candidate failures are non-fatal — ICE has redundancy
+                      }
+                    }
+                    _pendingCandidates = [];
+
                     const answer = await _peerConnection.createAnswer();
                     await _peerConnection.setLocalDescription(answer);
 
@@ -302,13 +325,31 @@ export function useCallChannel(): void {
                     await _peerConnection?.setRemoteDescription(
                       signal as RTCSessionDescriptionInit,
                     );
+
+                    // Flush candidates buffered before the answer arrived.
+                    if (_peerConnection) {
+                      for (const c of _pendingCandidates) {
+                        try {
+                          await _peerConnection.addIceCandidate(new RTCIceCandidate(c));
+                        } catch {
+                          // non-fatal
+                        }
+                      }
+                      _pendingCandidates = [];
+                    }
                   } else if ((signal as { type: string }).type === "ice_candidate") {
                     // Both sides receive ICE candidates — add to the connection.
+                    // If remote description isn't set yet, buffer the candidate;
+                    // it will be flushed once setRemoteDescription completes above.
                     const { candidate } = signal as {
                       type: "ice_candidate";
                       candidate: RTCIceCandidateInit;
                     };
-                    await _peerConnection?.addIceCandidate(new RTCIceCandidate(candidate));
+                    if (_peerConnection?.remoteDescription) {
+                      await _peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                    } else {
+                      _pendingCandidates.push(candidate);
+                    }
                   }
                 } catch (err) {
                   console.error("[useCallChannel] signal handling error:", err);

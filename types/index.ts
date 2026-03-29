@@ -51,14 +51,29 @@ export interface ConversationWithMembers extends Conversation {
   members: User[];
 }
 
+// ─── CallSessionSummary ──────────────────────────────────────────────────────
+// Embedded inside call-type Messages — matches the call_session field produced
+// by MessageBlueprint. Not the full CallSession resource; only the fields needed
+// to render the call log bubble in the conversation thread.
+export interface CallSessionSummary {
+  id: number;
+  call_type: "audio" | "video";
+  status: "calling" | "ringing" | "active" | "ended" | "declined" | "missed";
+  started_at: string | null;
+  ended_at: string | null;
+  // Integer seconds — null if the call was never answered (no started_at/ended_at pair)
+  duration: number | null;
+  initiator_id: number;
+}
+
 // ─── Message ────────────────────────────────────────────────────────────────
 // Matches MessageBlueprint default view.
 // Source: app/blueprints/message_blueprint.rb
 export interface Message {
   id: number;
   content: string;
-  // "text" | "image" | "file" — controls render strategy (future phases)
-  message_type: "text" | "image" | "file";
+  // "text" | "image" | "file" | "call" — controls render strategy
+  message_type: "text" | "image" | "file" | "call";
   edited_at: string | null; // null means never edited
   created_at: string;
   parent_message_id: number | null; // thread support (future phase)
@@ -68,6 +83,9 @@ export interface Message {
   // Reactions bundled inline for the same reason — rendering message + reactions
   // in one shot is more efficient than lazy-loading each reaction list separately.
   reactions: Reaction[];
+  // Populated only when message_type === "call" — null for all other types.
+  // Used to render the call log bubble (icon, duration, status, direction label).
+  call_session: CallSessionSummary | null;
 }
 
 // ─── Reaction ───────────────────────────────────────────────────────────────
@@ -116,17 +134,24 @@ export type ConversationChannelEvent =
   | { type: "message_edited"; message: Message }
   | { type: "message_deleted"; message_id: number }
   | { type: "reaction_added"; reaction: Reaction }
-  | { type: "reaction_removed"; reaction_id: number; message_id: number };
+  | { type: "reaction_removed"; reaction_id: number; message_id: number }
+  // Sent by ConversationChannel#typing — fires once when user transitions idle → typing.
+  // Recipients show "X is typing…" and hold it until a typing_stop event arrives.
+  | { type: "typing_start"; user_id: number; display_name: string }
+  // Sent by ConversationChannel#stop_typing — fires on submit, clear, or blur.
+  // Recipients clear the indicator immediately without waiting for any timeout.
+  | { type: "typing_stop"; user_id: number };
 
 // PresenceChannel broadcasts (stream: "presence")
-// Broadcast by PresenceChannel#broadcast_status on every subscribe/unsubscribe.
-// Source: app/channels/presence_channel.rb
-// All connected clients receive this — used to update the online dot globally.
-export interface PresenceChannelEvent {
-  user_id: number;
-  username: string;
-  status: "online" | "offline";
-}
+// Two shapes arrive on this stream:
+//   1. initial_presence — transmit()ed only to the newly-subscribed client so the
+//      store is pre-populated without waiting for other users' next 30s ping.
+//      Source: PresenceChannel#transmit_initial_roster
+//   2. status update — broadcast to ALL clients when any user goes on/offline.
+//      Source: PresenceChannel#broadcast_status
+export type PresenceChannelEvent =
+  | { type: "initial_presence"; online_user_ids: number[] }
+  | { user_id: number; username: string; status: "online" | "offline" };
 
 // CallChannel broadcasts (stream: "calls_user_<id>")
 // Each user gets their own personal stream — signals arrive only for you.
