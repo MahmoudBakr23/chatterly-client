@@ -1,4 +1,4 @@
-name: CI
+name: Client CI
 
 on:
   pull_request:
@@ -56,6 +56,7 @@ jobs:
       # Provide stub values so Next.js doesn't fail on missing env vars at build time.
       # These are not real credentials — just shape-fillers for the build step.
       API_URL: http://localhost:3001
+      NEXT_PUBLIC_API_URL: http://localhost:3001
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       NEXT_PUBLIC_CABLE_URL: ws://localhost:3001/cable
     steps:

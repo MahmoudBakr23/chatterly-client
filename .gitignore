@@ -31,3 +31,4 @@ next-env.d.ts
 # ─── Claude Code local settings ────────────────────────────────────────────────
 # Same rule as chatterly-api — local Claude config is machine-specific, not shared.
 /.claude
+.vercel
