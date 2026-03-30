@@ -2,7 +2,7 @@ name: Deploy Client
 
 on:
   workflow_run:
-    workflows: ["Client CI"]
+    workflows: ["CI"]
     types: [completed]
 
 permissions:
