@@ -29,7 +29,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@tailwindcss/postcss": "^4.0.0",
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.5.2",
     "@types/rails__actioncable": "^8.0.3",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
