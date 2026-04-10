@@ -33,7 +33,7 @@
     "@types/rails__actioncable": "^8.0.3",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "eslint": "^9.39.4",
+    "eslint": "^10.2.0",
     "eslint-config-next": "^16.2.1",
     "prettier": "^3.3.0",
     "prettier-plugin-tailwindcss": "^0.7.2",
